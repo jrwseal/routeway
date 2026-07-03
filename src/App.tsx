@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { RouteNode, ProcessedData } from './types';
+import { RouteNode, ProcessedData, ComparisonResult } from './types';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import CarbonFootprint from './components/CarbonFootprint';
 import DriverPortal from './components/DriverPortal';
 import StatisticsCar from './components/StatisticsCar';
+import AlgorithmComparison from './components/AlgorithmComparison';
 import { processData, DEFAULT_FLEET_POOL } from './lib/geo';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import FleetConfigModal from './components/FleetConfigModal';
@@ -29,19 +30,24 @@ export default function App() {
   const [isParamsModalOpen, setIsParamsModalOpen] = useState(false);
   const [departureTimeStr, setDepartureTimeStr] = useState("08:00");
 
+  const [algorithm, setAlgorithm] = useState<'savings' | 'nearest-neighbor' | 'sweep'>('savings');
+  const [applyTwoOpt, setApplyTwoOpt] = useState(false);
+  const [comparisonData, setComparisonData] = useState<ComparisonResult[] | null>(null);
+  const [isComparing, setIsComparing] = useState(false);
+
   const handleDataLoaded = (nodes: RouteNode[]) => {
     if (nodes.length < 2) {
       alert("Manifest must contain at least a Depot and one customer node.");
       return;
     }
-    
+
     setPendingNodes(nodes);
     setIsParamsModalOpen(true);
   };
 
   const calculateRoutes = async () => {
     if (!pendingNodes) return;
-    
+
     setIsParamsModalOpen(false);
     setIsProcessing(true);
     setCurrentStep(0);
@@ -51,7 +57,7 @@ export default function App() {
       const todayStr = new Date().toISOString().split('T')[0];
       // Default to today at 08:00 if not provided
       let startDateTime = new Date(`${todayStr} 08:00`);
-      
+
       if (departureTimeStr) {
         const parts = departureTimeStr.split(':');
         if (parts.length >= 2) {
@@ -66,7 +72,9 @@ export default function App() {
         driverWage: driverWaitingWage,
         fuelPrice4W,
         fuelPrice6W,
-        fuelPrice10W
+        fuelPrice10W,
+        algorithm,
+        applyTwoOpt,
       });
       setProcessedData(data);
       setCurrentTab('dashboard'); // Auto-switch to dashboard on load
@@ -78,15 +86,100 @@ export default function App() {
     }
   };
 
+  const handleCompareAll = async () => {
+    if (!pendingNodes) return;
+    setIsParamsModalOpen(false);
+    setIsComparing(true);
+    setCurrentStep(0);
+    setStepState('pending');
+
+    const todayStr = new Date().toISOString().split('T')[0];
+    let startDateTime = new Date(`${todayStr} 08:00`);
+    if (departureTimeStr) {
+      const parts = departureTimeStr.split(':');
+      if (parts.length >= 2) {
+        startDateTime = new Date(`${todayStr} ${parts[0]}:${parts[1]}`);
+      }
+    }
+
+    const variants: { algorithm: 'savings' | 'nearest-neighbor' | 'sweep'; applyTwoOpt: boolean }[] = [
+      { algorithm: 'savings', applyTwoOpt: false },
+      { algorithm: 'savings', applyTwoOpt: true },
+      { algorithm: 'nearest-neighbor', applyTwoOpt: false },
+      { algorithm: 'nearest-neighbor', applyTwoOpt: true },
+      { algorithm: 'sweep', applyTwoOpt: false },
+      { algorithm: 'sweep', applyTwoOpt: true },
+    ];
+
+    const baseParams = {
+      fleetPool: activeFleetPool,
+      avgSpeed,
+      startTime: startDateTime,
+      driverWage: driverWaitingWage,
+      fuelPrice4W,
+      fuelPrice6W,
+      fuelPrice10W,
+    };
+
+    const labels: Record<string, string> = {
+      savings: 'Clarke-Wright',
+      'nearest-neighbor': 'Nearest Neighbor',
+      sweep: 'Sweep',
+    };
+
+    const results = await Promise.allSettled(
+      variants.map(v => processData(pendingNodes!, { ...baseParams, ...v }))
+    );
+
+    const comparison: ComparisonResult[] = [];
+    results.forEach((r, idx) => {
+      if (r.status === 'fulfilled') {
+        const v = variants[idx];
+        const d = r.value;
+        comparison.push({
+          algorithm: labels[v.algorithm],
+          twoOpt: v.applyTwoOpt,
+          milkRunDistance: d.milkRunDistance,
+          milkRunCost: d.milkRunCost,
+          milkRunCO2: d.milkRunCO2,
+          savingsPercentage: d.savingsPercentage,
+          totalTrucksUsed: d.totalTrucksUsed,
+        });
+      } else {
+        console.warn(`Algorithm variant ${idx} failed:`, r.reason);
+      }
+    });
+
+    // Auto-select best result (lowest cost) for detail views
+    if (comparison.length > 0) {
+      const bestIdx = comparison.reduce((bi, c, i) => c.milkRunCost < comparison[bi].milkRunCost ? i : bi, 0);
+      const bestVariant = variants[results.findIndex((r, i) => r.status === 'fulfilled' &&
+        comparison.find(c => c.algorithm === labels[variants[i].algorithm] && c.twoOpt === variants[i].applyTwoOpt))];
+      // Re-run best variant to get full ProcessedData for detail views
+      try {
+        const bestData = await processData(pendingNodes!, { ...baseParams, ...variants[bestIdx] });
+        setProcessedData(bestData);
+      } catch (e) {
+        console.error('Best variant re-run failed', e);
+      }
+    }
+
+    setComparisonData(comparison);
+    setCurrentTab('comparison');
+    setIsComparing(false);
+  };
+
   return (
     <div className="flex h-screen w-full bg-[#F8FAFC] overflow-hidden font-sans">
       {/* Sidebar Layout */}
-      <Sidebar 
+      <Sidebar
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
         onDataLoaded={handleDataLoaded}
         isProcessing={isProcessing}
         hasData={processedData !== null}
+        hasComparison={comparisonData !== null}
+        comparisonData={comparisonData}
         avgSpeed={avgSpeed}
         setAvgSpeed={setAvgSpeed}
         setIsFleetConfigOpen={setIsFleetConfigOpen}
@@ -94,11 +187,15 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 h-full overflow-y-auto">
-        {isProcessing ? (
+        {(isProcessing || isComparing) ? (
           <div className="h-full flex flex-col items-center justify-center">
             <Loader2 className="w-12 h-12 text-[#1E3A8A] animate-spin mb-4" />
-            <h2 className="text-xl font-bold text-slate-700">Calculating Optimizer Engine...</h2>
-            <p className="text-slate-500 mt-2">Fetching live OSRM routes and modeling emissions.</p>
+            <h2 className="text-xl font-bold text-slate-700">
+              {isComparing ? 'Running All Algorithms...' : 'Calculating Optimizer Engine...'}
+            </h2>
+            <p className="text-slate-500 mt-2">
+              {isComparing ? 'Running 6 variants in parallel.' : 'Fetching live OSRM routes and modeling emissions.'}
+            </p>
           </div>
         ) : !processedData ? (
           <div className="h-full flex flex-col items-center justify-center p-8 text-center animate-fade-in">
@@ -116,21 +213,24 @@ export default function App() {
             {currentTab === 'dashboard' && <Dashboard data={processedData} />}
             {currentTab === 'statistics' && <StatisticsCar data={processedData} />}
             {currentTab === 'driver' && (
-              <DriverPortal 
-                data={processedData} 
-                currentStep={currentStep} 
+              <DriverPortal
+                data={processedData}
+                currentStep={currentStep}
                 setCurrentStep={setCurrentStep}
                 stepState={stepState}
                 setStepState={setStepState}
               />
             )}
             {currentTab === 'carbon' && <CarbonFootprint data={processedData} />}
+            {currentTab === 'comparison' && comparisonData && (
+              <AlgorithmComparison data={comparisonData} />
+            )}
           </>
         )}
       </main>
 
       {/* Fleet Config Modal */}
-      <FleetConfigModal 
+      <FleetConfigModal
         isOpen={isFleetConfigOpen}
         onClose={() => setIsFleetConfigOpen(false)}
         activeFleetPool={activeFleetPool}
@@ -155,34 +255,60 @@ export default function App() {
               <h2 className="text-xl font-bold">Set Routing Parameters</h2>
               <p className="text-blue-100 text-sm mt-1">Please set your Fleet Speed and Departure Time before calculating.</p>
             </div>
-            
+
             <div className="p-6 space-y-6">
               <div>
                 <label className="text-sm font-semibold text-slate-700 block mb-2">Average Speed (km/h)</label>
-                <input 
-                  type="number" 
+                <input
+                  type="number"
                   min="1"
-                  value={avgSpeed} 
+                  value={avgSpeed}
                   onChange={(e) => setAvgSpeed(Number(e.target.value))}
                   className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-lg font-bold text-slate-800 focus:ring-2 focus:ring-[#1E3A8A] focus:outline-none"
                   placeholder="e.g. 50"
                 />
               </div>
-              
+
               <div>
                 <label className="text-sm font-semibold text-slate-700 block mb-2">Departure Time (HH:MM)</label>
-                <input 
-                  type="time" 
-                  value={departureTimeStr} 
+                <input
+                  type="time"
+                  value={departureTimeStr}
                   onChange={(e) => setDepartureTimeStr(e.target.value)}
                   className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-lg font-bold text-slate-800 focus:ring-2 focus:ring-[#1E3A8A] focus:outline-none"
                   required
                 />
               </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700 block mb-2">Algorithm</label>
+                <select
+                  value={algorithm}
+                  onChange={(e) => setAlgorithm(e.target.value as 'savings' | 'nearest-neighbor' | 'sweep')}
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-[#1E3A8A] focus:outline-none bg-white"
+                >
+                  <option value="savings">Clarke-Wright Savings</option>
+                  <option value="nearest-neighbor">Nearest Neighbor</option>
+                  <option value="sweep">Sweep</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <input
+                  id="twoopt"
+                  type="checkbox"
+                  checked={applyTwoOpt}
+                  onChange={(e) => setApplyTwoOpt(e.target.checked)}
+                  className="w-4 h-4 accent-[#1E3A8A]"
+                />
+                <label htmlFor="twoopt" className="text-sm font-semibold text-slate-700">
+                  Refine with 2-opt
+                </label>
+              </div>
             </div>
 
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
-              <button 
+              <button
                 onClick={() => {
                   setIsParamsModalOpen(false);
                   setPendingNodes(null);
@@ -191,7 +317,14 @@ export default function App() {
               >
                 Cancel
               </button>
-              <button 
+              <button
+                onClick={handleCompareAll}
+                disabled={!avgSpeed || avgSpeed <= 0 || !departureTimeStr}
+                className="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#1E3A8A] text-white hover:bg-blue-800 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Compare All
+              </button>
+              <button
                 onClick={calculateRoutes}
                 disabled={!avgSpeed || avgSpeed <= 0 || !departureTimeStr}
                 className="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#10B981] text-white hover:bg-[#059669] transition-colors shadow-sm shadow-[#10B981]/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
