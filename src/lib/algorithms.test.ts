@@ -202,17 +202,15 @@ describe('orOptAnnealing', () => {
       makeNode(3, 13.7, 100.6, 1), // E
       makeNode(4, 13.7, 100.4, 1), // W
     ];
-    const crossParams: ProcessingParams = { ...baseParams };
-
     const original = [1, 2, 3, 4];
     const reordered = twoOpt(original, crossNodes);
     // Prove the trap is real: twoOpt reorders a feasible route into an infeasible one.
     expect(reordered).not.toEqual(original);
-    expect(checkRouteFeasible(original, crossNodes, crossParams)).toBe(true);
-    expect(checkRouteFeasible(reordered, crossNodes, crossParams)).toBe(false);
+    expect(checkRouteFeasible(original, crossNodes, baseParams)).toBe(true);
+    expect(checkRouteFeasible(reordered, crossNodes, baseParams)).toBe(false);
 
     // Prove the guard used by orOptAnnealing's final cleanup pass falls back
     // to the pre-2-opt route instead of returning the infeasible one.
-    expect(twoOptFeasible(original, crossNodes, crossParams)).toEqual(original);
+    expect(twoOptFeasible(original, crossNodes, baseParams)).toEqual(original);
   });
 });

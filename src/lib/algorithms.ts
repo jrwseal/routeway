@@ -37,7 +37,6 @@ export function checkRouteFeasible(routeSeq: number[], nodes: RouteNode[], param
 
 export function clarkWrightSavings(nodes: RouteNode[], params: ProcessingParams): number[][] {
   const depot = nodes[0];
-  const maxCapacity = getMaxCapacity(params);
 
   const savings: { i: number; j: number; savings: number }[] = [];
   for (let i = 1; i < nodes.length; i++) {
