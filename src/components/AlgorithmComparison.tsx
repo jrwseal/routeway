@@ -32,7 +32,7 @@ export default function AlgorithmComparison({ data, onSelectVariant }: Props) {
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold text-[#1E3A8A] mb-1">Algorithm Comparison</h2>
-      <p className="text-sm text-slate-500 mb-6">Green cell = best value per metric. Detail views use the lowest-cost result. Time window compliance (Due_Time) is only guaranteed with Clarke-Wright Savings.</p>
+      <p className="text-sm text-slate-500 mb-6">Green cell = best value per metric. Detail views use the lowest-cost result. Time window compliance (Due_Time) is guaranteed with Clarke-Wright Savings and Or-opt + SA.</p>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
         <table className="w-full text-sm border-collapse">
@@ -52,7 +52,9 @@ export default function AlgorithmComparison({ data, onSelectVariant }: Props) {
             {data.map((row, i) => (
               <tr key={i} className={`border-t border-slate-100 ${i % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}>
                 <td className="px-4 py-3 font-medium text-slate-800">{row.algorithm}</td>
-                <td className="px-4 py-3 text-slate-500">{row.twoOpt ? '✓' : '—'}</td>
+                <td className="px-4 py-3 text-slate-500">
+                  {row.algorithm === 'Or-opt + SA' ? 'built-in' : row.twoOpt ? '✓' : '—'}
+                </td>
                 <td className={`px-4 py-3 text-right rounded ${colClass(i, bestDist)}`}>
                   {row.milkRunDistance.toFixed(1)}
                 </td>
