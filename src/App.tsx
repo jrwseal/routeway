@@ -153,8 +153,6 @@ export default function App() {
     // Auto-select best result (lowest cost) for detail views
     if (comparison.length > 0) {
       const bestIdx = comparison.reduce((bi, c, i) => c.milkRunCost < comparison[bi].milkRunCost ? i : bi, 0);
-      const bestVariant = variants[results.findIndex((r, i) => r.status === 'fulfilled' &&
-        comparison.find(c => c.algorithm === labels[variants[i].algorithm] && c.twoOpt === variants[i].applyTwoOpt))];
       // Re-run best variant to get full ProcessedData for detail views
       try {
         const bestData = await processData(pendingNodes!, { ...baseParams, ...variants[bestIdx] });
