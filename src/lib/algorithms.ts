@@ -127,7 +127,7 @@ export function sweep(nodes: RouteNode[], params: ProcessingParams): number[][] 
   const maxCapacity = getMaxCapacity(params);
   const depot = nodes[0];
 
-  const customers = [];
+  const customers: { idx: number; angle: number }[] = [];
   for (let i = 1; i < nodes.length; i++) {
     const angle = Math.atan2(nodes[i].lat - depot.lat, nodes[i].lon - depot.lon);
     customers.push({ idx: i, angle });
@@ -160,7 +160,7 @@ export function twoOpt(route: number[], nodes: RouteNode[]): number[] {
 
   while (improved) {
     improved = false;
-    for (let i = 0; i < best.length - 1; i++) {
+    outer: for (let i = 0; i < best.length - 1; i++) {
       for (let j = i + 2; j < best.length; j++) {
         const ni = nodes[best[i]], ni1 = nodes[best[i + 1]];
         const nj = nodes[best[j]];
@@ -181,6 +181,7 @@ export function twoOpt(route: number[], nodes: RouteNode[]): number[] {
             ...best.slice(j + 1),
           ];
           improved = true;
+          break outer;
         }
       }
     }
