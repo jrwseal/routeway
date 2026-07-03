@@ -3,13 +3,14 @@ import type { ComparisonResult } from '../types';
 
 interface Props {
   data: ComparisonResult[];
+  onSelectVariant: (idx: number) => void;
 }
 
 function bestIdx(data: ComparisonResult[], key: keyof Pick<ComparisonResult, 'milkRunDistance' | 'milkRunCost' | 'milkRunCO2' | 'totalTrucksUsed'>): number {
   return data.reduce((bi, c, i) => (c[key] < data[bi][key] ? i : bi), 0);
 }
 
-export default function AlgorithmComparison({ data }: Props) {
+export default function AlgorithmComparison({ data, onSelectVariant }: Props) {
   if (data.length === 0) return null;
 
   const bestDist = bestIdx(data, 'milkRunDistance');
@@ -37,6 +38,7 @@ export default function AlgorithmComparison({ data }: Props) {
               <th className="px-4 py-3 text-right font-semibold">Cost (฿)</th>
               <th className="px-4 py-3 text-right font-semibold">CO₂ (kg)</th>
               <th className="px-4 py-3 text-right font-semibold">Trucks</th>
+              <th className="px-4 py-3 text-center font-semibold">Detail</th>
             </tr>
           </thead>
           <tbody>
@@ -55,6 +57,14 @@ export default function AlgorithmComparison({ data }: Props) {
                 </td>
                 <td className={`px-4 py-3 text-right rounded ${colClass(i, bestTrucks)}`}>
                   {row.totalTrucksUsed}
+                </td>
+                <td className="px-4 py-3 text-center">
+                  <button
+                    onClick={() => onSelectVariant(i)}
+                    className="px-3 py-1 text-xs font-bold rounded-lg bg-[#1E3A8A] text-white hover:bg-blue-800 transition-colors"
+                  >
+                    View
+                  </button>
                 </td>
               </tr>
             ))}

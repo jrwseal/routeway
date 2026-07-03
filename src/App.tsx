@@ -29,6 +29,7 @@ export default function App() {
   const [departureTimeStr, setDepartureTimeStr] = useState("08:00");
 
   const [comparisonData, setComparisonData] = useState<ComparisonResult[] | null>(null);
+  const [variantResults, setVariantResults] = useState<ProcessedData[]>([]);
   const [isComparing, setIsComparing] = useState(false);
 
   const handleDataLoaded = (nodes: RouteNode[]) => {
@@ -88,6 +89,7 @@ export default function App() {
     );
 
     const comparison: ComparisonResult[] = [];
+    const variantData: ProcessedData[] = [];
     results.forEach((r, idx) => {
       if (r.status === 'fulfilled') {
         const v = variants[idx];
@@ -100,22 +102,18 @@ export default function App() {
           milkRunCO2: d.milkRunCO2,
           totalTrucksUsed: d.totalTrucksUsed,
         });
+        variantData.push(d);
       } else {
         console.warn(`Algorithm variant ${idx} failed:`, r.reason);
       }
     });
 
     // Auto-select best result (lowest cost) for detail views
-    if (comparison.length > 0) {
+    if (variantData.length > 0) {
       const bestIdx = comparison.reduce((bi, c, i) => c.milkRunCost < comparison[bi].milkRunCost ? i : bi, 0);
-      // Re-run best variant to get full ProcessedData for detail views
-      try {
-        const bestData = await processData(pendingNodes!, { ...baseParams, ...variants[bestIdx] });
-        setProcessedData(bestData);
-      } catch (e) {
-        console.error('Best variant re-run failed', e);
-      }
+      setProcessedData(variantData[bestIdx]);
     }
+    setVariantResults(variantData);
 
     setComparisonData(comparison);
     setCurrentTab('comparison');
@@ -171,7 +169,13 @@ export default function App() {
             )}
             {currentTab === 'carbon' && <CarbonFootprint data={processedData} />}
             {currentTab === 'comparison' && comparisonData && (
-              <AlgorithmComparison data={comparisonData} />
+              <AlgorithmComparison
+                data={comparisonData}
+                onSelectVariant={(idx) => {
+                  setProcessedData(variantResults[idx]);
+                  setCurrentTab('dashboard');
+                }}
+              />
             )}
           </>
         )}
