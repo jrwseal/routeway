@@ -49,6 +49,18 @@ export interface ProcessingParams {
   fuelPrice4W: number;
   fuelPrice6W: number;
   fuelPrice10W: number;
+  algorithm: 'savings' | 'nearest-neighbor' | 'sweep';
+  applyTwoOpt: boolean;
+}
+
+export interface ComparisonResult {
+  algorithm: string;
+  twoOpt: boolean;
+  milkRunDistance: number;
+  milkRunCost: number;
+  milkRunCO2: number;
+  savingsPercentage: number;
+  totalTrucksUsed: number;
 }
 
 export interface ProcessedData {
