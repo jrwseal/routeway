@@ -172,7 +172,7 @@ export default function App() {
                 setStepState={setStepState}
               />
             )}
-            {currentTab === 'carbon' && <CarbonFootprint data={processedData} savingsBaseline={savingsBaseline} />}
+            {currentTab === 'carbon' && <CarbonFootprint data={processedData} savingsBaseline={savingsBaseline} comparisonData={comparisonData} />}
             {currentTab === 'comparison' && comparisonData && (
               <AlgorithmComparison
                 data={comparisonData}
