@@ -1,0 +1,14 @@
+@import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
+
+:root {
+  --primary-navy: #1E3A8A;
+  --bg-slate: #F8FAFC;
+  --success-green: #10B981;
+  --danger-red: #EF4444;
+}
+
+body {
+  background-color: var(--bg-slate);
+  color: #333333;
+}

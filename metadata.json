@@ -1,0 +1,6 @@
+{
+  "name": "RouteWay Intelligence",
+  "description": "Logistics Intelligence application for route optimization and carbon footprint tracking.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
