@@ -9,10 +9,6 @@ function bestIdx(data: ComparisonResult[], key: keyof Pick<ComparisonResult, 'mi
   return data.reduce((bi, c, i) => (c[key] < data[bi][key] ? i : bi), 0);
 }
 
-function bestIdxMax(data: ComparisonResult[], key: keyof Pick<ComparisonResult, 'savingsPercentage'>): number {
-  return data.reduce((bi, c, i) => (c[key] > data[bi][key] ? i : bi), 0);
-}
-
 export default function AlgorithmComparison({ data }: Props) {
   if (data.length === 0) return null;
 
@@ -20,7 +16,6 @@ export default function AlgorithmComparison({ data }: Props) {
   const bestCost = bestIdx(data, 'milkRunCost');
   const bestCO2 = bestIdx(data, 'milkRunCO2');
   const bestTrucks = bestIdx(data, 'totalTrucksUsed');
-  const bestSavings = bestIdxMax(data, 'savingsPercentage');
 
   const colClass = (rowIdx: number, metricBest: number) =>
     rowIdx === metricBest
@@ -42,7 +37,6 @@ export default function AlgorithmComparison({ data }: Props) {
               <th className="px-4 py-3 text-right font-semibold">Cost (฿)</th>
               <th className="px-4 py-3 text-right font-semibold">CO₂ (kg)</th>
               <th className="px-4 py-3 text-right font-semibold">Trucks</th>
-              <th className="px-4 py-3 text-right font-semibold">Savings %</th>
             </tr>
           </thead>
           <tbody>
@@ -61,9 +55,6 @@ export default function AlgorithmComparison({ data }: Props) {
                 </td>
                 <td className={`px-4 py-3 text-right rounded ${colClass(i, bestTrucks)}`}>
                   {row.totalTrucksUsed}
-                </td>
-                <td className={`px-4 py-3 text-right rounded ${colClass(i, bestSavings)}`}>
-                  {row.savingsPercentage.toFixed(1)}%
                 </td>
               </tr>
             ))}

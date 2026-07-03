@@ -15,8 +15,6 @@ export default function App() {
   const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [stepState, setStepState] = useState<'pending' | 'in_transit'>('pending');
-  const [isProcessing, setIsProcessing] = useState(false);
-
   // Configuration State
   const [activeFleetPool, setActiveFleetPool] = useState([...DEFAULT_FLEET_POOL]);
   const [isFleetConfigOpen, setIsFleetConfigOpen] = useState(false);
@@ -30,8 +28,6 @@ export default function App() {
   const [isParamsModalOpen, setIsParamsModalOpen] = useState(false);
   const [departureTimeStr, setDepartureTimeStr] = useState("08:00");
 
-  const [algorithm, setAlgorithm] = useState<'savings' | 'nearest-neighbor' | 'sweep'>('savings');
-  const [applyTwoOpt, setApplyTwoOpt] = useState(false);
   const [comparisonData, setComparisonData] = useState<ComparisonResult[] | null>(null);
   const [isComparing, setIsComparing] = useState(false);
 
@@ -44,47 +40,6 @@ export default function App() {
 
     setPendingNodes(nodes);
     setIsParamsModalOpen(true);
-  };
-
-  const calculateRoutes = async () => {
-    if (!pendingNodes) return;
-
-    setIsParamsModalOpen(false);
-    setIsProcessing(true);
-    setCurrentStep(0);
-    setStepState('pending');
-    try {
-      const depot = pendingNodes[0];
-      const todayStr = new Date().toISOString().split('T')[0];
-      // Default to today at 08:00 if not provided
-      let startDateTime = new Date(`${todayStr} 08:00`);
-
-      if (departureTimeStr) {
-        const parts = departureTimeStr.split(':');
-        if (parts.length >= 2) {
-          startDateTime = new Date(`${todayStr} ${parts[0]}:${parts[1]}`);
-        }
-      }
-
-      const data = await processData(pendingNodes, {
-        fleetPool: activeFleetPool,
-        avgSpeed,
-        startTime: startDateTime,
-        driverWage: driverWaitingWage,
-        fuelPrice4W,
-        fuelPrice6W,
-        fuelPrice10W,
-        algorithm,
-        applyTwoOpt,
-      });
-      setProcessedData(data);
-      setCurrentTab('dashboard'); // Auto-switch to dashboard on load
-    } catch (error) {
-      console.error(error);
-      alert("Error processing route data. Please check connection and console.");
-    } finally {
-      setIsProcessing(false);
-    }
   };
 
   const handleCompareAll = async () => {
@@ -143,7 +98,6 @@ export default function App() {
           milkRunDistance: d.milkRunDistance,
           milkRunCost: d.milkRunCost,
           milkRunCO2: d.milkRunCO2,
-          savingsPercentage: d.savingsPercentage,
           totalTrucksUsed: d.totalTrucksUsed,
         });
       } else {
@@ -175,7 +129,7 @@ export default function App() {
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
         onDataLoaded={handleDataLoaded}
-        isProcessing={isProcessing}
+        isProcessing={isComparing}
         hasData={processedData !== null}
         hasComparison={comparisonData !== null}
         avgSpeed={avgSpeed}
@@ -185,15 +139,11 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="flex-1 h-full overflow-y-auto">
-        {(isProcessing || isComparing) ? (
+        {isComparing ? (
           <div className="h-full flex flex-col items-center justify-center">
             <Loader2 className="w-12 h-12 text-[#1E3A8A] animate-spin mb-4" />
-            <h2 className="text-xl font-bold text-slate-700">
-              {isComparing ? 'Running All Algorithms...' : 'Calculating Optimizer Engine...'}
-            </h2>
-            <p className="text-slate-500 mt-2">
-              {isComparing ? 'Running 6 variants in parallel.' : 'Fetching live OSRM routes and modeling emissions.'}
-            </p>
+            <h2 className="text-xl font-bold text-slate-700">Running All Algorithms...</h2>
+            <p className="text-slate-500 mt-2">Running 6 variants in parallel.</p>
           </div>
         ) : !processedData ? (
           <div className="h-full flex flex-col items-center justify-center p-8 text-center animate-fade-in">
@@ -278,31 +228,6 @@ export default function App() {
                 />
               </div>
 
-              <div>
-                <label className="text-sm font-semibold text-slate-700 block mb-2">Algorithm</label>
-                <select
-                  value={algorithm}
-                  onChange={(e) => setAlgorithm(e.target.value as 'savings' | 'nearest-neighbor' | 'sweep')}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-[#1E3A8A] focus:outline-none bg-white"
-                >
-                  <option value="savings">Clarke-Wright Savings</option>
-                  <option value="nearest-neighbor">Nearest Neighbor</option>
-                  <option value="sweep">Sweep</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <input
-                  id="twoopt"
-                  type="checkbox"
-                  checked={applyTwoOpt}
-                  onChange={(e) => setApplyTwoOpt(e.target.checked)}
-                  className="w-4 h-4 accent-[#1E3A8A]"
-                />
-                <label htmlFor="twoopt" className="text-sm font-semibold text-slate-700">
-                  Refine with 2-opt
-                </label>
-              </div>
             </div>
 
             <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
@@ -318,16 +243,9 @@ export default function App() {
               <button
                 onClick={handleCompareAll}
                 disabled={!avgSpeed || avgSpeed <= 0 || !departureTimeStr}
-                className="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#1E3A8A] text-white hover:bg-blue-800 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#10B981] text-white hover:bg-[#059669] transition-colors shadow-sm shadow-[#10B981]/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Compare All
-              </button>
-              <button
-                onClick={calculateRoutes}
-                disabled={!avgSpeed || avgSpeed <= 0 || !departureTimeStr}
-                className="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#10B981] text-white hover:bg-[#059669] transition-colors shadow-sm shadow-[#10B981]/30 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
-              >
-                Calculate Routes (คำนวณเส้นทาง)
+                คำนวณเส้นทาง
               </button>
             </div>
           </div>

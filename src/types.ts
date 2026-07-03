@@ -59,7 +59,6 @@ export interface ComparisonResult {
   milkRunDistance: number;
   milkRunCost: number;
   milkRunCO2: number;
-  savingsPercentage: number;
   totalTrucksUsed: number;
 }
 
