@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { nearestNeighbor, sweep, twoOpt, checkRouteFeasible, orOptAnnealing, clarkWrightSavings } from './algorithms';
+import { nearestNeighbor, sweep, twoOpt, checkRouteFeasible, orOptAnnealing, clarkWrightSavings, twoOptFeasible } from './algorithms';
+import { getFallbackDist } from './geo';
 import type { RouteNode, ProcessingParams } from '../types';
 
 const depot: RouteNode = {
@@ -173,5 +174,45 @@ describe('orOptAnnealing', () => {
     }, 0);
 
     expect(annealedDist).toBeLessThanOrEqual(seedDist + 0.001);
+  });
+
+  it('does not return a route made time-window infeasible by the final twoOpt cleanup', () => {
+    // Cardinal-point layout (N, S, E, W around the depot): visiting in N,S,E,W
+    // order is feasible for a tight due time on the S node, but twoOpt reorders
+    // this crossing path to N,E,S,W, which arrives at the S node much later.
+    const bareNodes: RouteNode[] = [
+      depot,
+      makeNode(1, 13.8, 100.5, 1), // N
+      makeNode(2, 13.6, 100.5, 1), // S
+      makeNode(3, 13.7, 100.6, 1), // E
+      makeNode(4, 13.7, 100.4, 1), // W
+    ];
+    // Arrival time at the S node (index 2) when visited 2nd, per the same
+    // travel-time/service-time math as checkRouteFeasible.
+    const dist1 = getFallbackDist([depot.lon, depot.lat], [bareNodes[1].lon, bareNodes[1].lat]);
+    const dist12 = getFallbackDist([bareNodes[1].lon, bareNodes[1].lat], [bareNodes[2].lon, bareNodes[2].lat]);
+    const arrivalAtNode1 = baseParams.startTime.getTime() + (dist1 / baseParams.avgSpeed) * 3600 * 1000;
+    const departAfterNode1 = arrivalAtNode1 + 30 * 60 * 1000;
+    const arrivalAtNode2Original = departAfterNode1 + (dist12 / baseParams.avgSpeed) * 3600 * 1000;
+
+    const crossNodes: RouteNode[] = [
+      depot,
+      makeNode(1, 13.8, 100.5, 1), // N
+      { ...makeNode(2, 13.6, 100.5, 1), dueTime: new Date(arrivalAtNode2Original + 5 * 60 * 1000) }, // S, tight due time
+      makeNode(3, 13.7, 100.6, 1), // E
+      makeNode(4, 13.7, 100.4, 1), // W
+    ];
+    const crossParams: ProcessingParams = { ...baseParams };
+
+    const original = [1, 2, 3, 4];
+    const reordered = twoOpt(original, crossNodes);
+    // Prove the trap is real: twoOpt reorders a feasible route into an infeasible one.
+    expect(reordered).not.toEqual(original);
+    expect(checkRouteFeasible(original, crossNodes, crossParams)).toBe(true);
+    expect(checkRouteFeasible(reordered, crossNodes, crossParams)).toBe(false);
+
+    // Prove the guard used by orOptAnnealing's final cleanup pass falls back
+    // to the pre-2-opt route instead of returning the infeasible one.
+    expect(twoOptFeasible(original, crossNodes, crossParams)).toEqual(original);
   });
 });

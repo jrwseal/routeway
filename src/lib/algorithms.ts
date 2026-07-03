@@ -209,6 +209,11 @@ function totalDistance(routes: number[][], nodes: RouteNode[]): number {
   return routes.reduce((sum, r) => sum + routeDistance(r, nodes), 0);
 }
 
+export function twoOptFeasible(route: number[], nodes: RouteNode[], params: ProcessingParams): number[] {
+  const optimized = twoOpt(route, nodes);
+  return checkRouteFeasible(optimized, nodes, params) ? optimized : route;
+}
+
 export function orOptAnnealing(nodes: RouteNode[], params: ProcessingParams): number[][] {
   const ITERATIONS = 500;
   let routes: number[][] = clarkWrightSavings(nodes, params).map(r => [...r]);
@@ -270,5 +275,5 @@ export function orOptAnnealing(nodes: RouteNode[], params: ProcessingParams): nu
     }
   }
 
-  return bestRoutes.map(r => twoOpt(r, nodes));
+  return bestRoutes.map(r => twoOptFeasible(r, nodes, params));
 }
