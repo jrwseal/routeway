@@ -162,7 +162,7 @@ export default function App() {
         ) : (
           <>
             {currentTab === 'dashboard' && <Dashboard data={processedData} savingsBaseline={savingsBaseline} />}
-            {currentTab === 'statistics' && <StatisticsCar data={processedData} />}
+            {currentTab === 'statistics' && <StatisticsCar data={processedData} savingsBaseline={savingsBaseline} />}
             {currentTab === 'driver' && (
               <DriverPortal
                 data={processedData}
@@ -172,7 +172,7 @@ export default function App() {
                 setStepState={setStepState}
               />
             )}
-            {currentTab === 'carbon' && <CarbonFootprint data={processedData} />}
+            {currentTab === 'carbon' && <CarbonFootprint data={processedData} savingsBaseline={savingsBaseline} />}
             {currentTab === 'comparison' && comparisonData && (
               <AlgorithmComparison
                 data={comparisonData}

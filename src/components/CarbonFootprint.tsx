@@ -5,13 +5,25 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsive
 
 interface CarbonFootprintProps {
   data: ProcessedData;
+  savingsBaseline?: ProcessedData | null;
 }
 
-export default function CarbonFootprint({ data }: CarbonFootprintProps) {
+const routeFuelTotal = (d: ProcessedData) =>
+  d.routeSummaries.reduce((acc, r) => acc + r.distanceKm * r.vehicle.fuelConsumption, 0);
+
+export default function CarbonFootprint({ data, savingsBaseline }: CarbonFootprintProps) {
+  const baselineCO2 = savingsBaseline ? savingsBaseline.milkRunCO2 : data.traditionalCO2;
+  const co2ReductionPct = baselineCO2 > 0
+    ? ((baselineCO2 - data.milkRunCO2) / baselineCO2) * 100
+    : 0;
+  const fuelSaved = savingsBaseline
+    ? routeFuelTotal(savingsBaseline) - routeFuelTotal(data)
+    : data.fuelSavedLiters;
+
   const chartData = [
     {
-      name: 'Traditional Round Trips',
-      CO2: Math.round(data.traditionalCO2),
+      name: savingsBaseline ? 'Clarke-Wright Savings' : 'Traditional Round Trips',
+      CO2: Math.round(baselineCO2),
     },
     {
       name: 'RouteWay Milk Run',
@@ -32,17 +44,19 @@ export default function CarbonFootprint({ data }: CarbonFootprintProps) {
             <CardTitle className="text-sm font-medium text-slate-500">Total Carbon Reduction</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-[#10B981]">{data.co2ReductionPercent.toFixed(1)}%</div>
-            <p className="text-sm text-slate-500 mt-2">Reduction in CO₂ emissions compared to traditional methods</p>
+            <div className={`text-4xl font-bold ${co2ReductionPct >= 0 ? 'text-[#10B981]' : 'text-red-600'}`}>{co2ReductionPct.toFixed(1)}%</div>
+            <p className="text-sm text-slate-500 mt-2">
+              {savingsBaseline ? 'Reduction in CO₂ emissions vs Clarke-Wright Savings' : 'Reduction in CO₂ emissions compared to traditional methods'}
+            </p>
           </CardContent>
         </Card>
-        
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-500">Fuel Liters Saved</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold text-[#1E3A8A]">{data.fuelSavedLiters.toFixed(1)} L</div>
+            <div className={`text-4xl font-bold ${fuelSaved >= 0 ? 'text-[#1E3A8A]' : 'text-red-600'}`}>{fuelSaved.toFixed(1)} L</div>
             <p className="text-sm text-slate-500 mt-2">Saved per complete manifest tour</p>
           </CardContent>
         </Card>

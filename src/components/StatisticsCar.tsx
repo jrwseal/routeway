@@ -5,9 +5,16 @@ import { BarChart, Leaf, Truck } from 'lucide-react';
 
 interface StatisticsCarProps {
   data: ProcessedData;
+  savingsBaseline?: ProcessedData | null;
 }
 
-export default function StatisticsCar({ data }: StatisticsCarProps) {
+export default function StatisticsCar({ data, savingsBaseline }: StatisticsCarProps) {
+  const baselineDistance = savingsBaseline ? savingsBaseline.milkRunDistance : data.traditionalDistance;
+  const baselineCO2 = savingsBaseline ? savingsBaseline.milkRunCO2 : data.traditionalCO2;
+  const co2ReductionPct = baselineCO2 > 0
+    ? ((baselineCO2 - data.milkRunCO2) / baselineCO2) * 100
+    : 0;
+
   return (
     <div className="p-8 h-full overflow-y-auto animate-fade-in bg-slate-50">
       <div className="mb-8">
@@ -30,17 +37,17 @@ export default function StatisticsCar({ data }: StatisticsCarProps) {
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
               <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm border border-white/20">
-                <p className="text-blue-200 font-medium mb-1">Total Distance Saved</p>
-                <p className="text-3xl font-bold">{(data.traditionalDistance - data.milkRunDistance).toFixed(2)} km</p>
+                <p className="text-blue-200 font-medium mb-1">Total Distance Saved{savingsBaseline ? ' (vs Savings)' : ''}</p>
+                <p className="text-3xl font-bold">{(baselineDistance - data.milkRunDistance).toFixed(2)} km</p>
               </div>
               <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm border border-white/20">
-                <p className="text-blue-200 font-medium mb-1">Total Carbon Reduced</p>
-                <p className="text-3xl font-bold">{(data.traditionalCO2 - data.milkRunCO2).toFixed(2)} kg CO₂</p>
+                <p className="text-blue-200 font-medium mb-1">Total Carbon Reduced{savingsBaseline ? ' (vs Savings)' : ''}</p>
+                <p className="text-3xl font-bold">{(baselineCO2 - data.milkRunCO2).toFixed(2)} kg CO₂</p>
               </div>
               <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm border border-white/20">
                 <p className="text-blue-200 font-medium mb-1">Reduction Percentage</p>
-                <p className="text-4xl font-black text-emerald-400">
-                  {data.co2ReductionPercent.toFixed(1)}%
+                <p className={`text-4xl font-black ${co2ReductionPct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                  {co2ReductionPct.toFixed(1)}%
                 </p>
               </div>
             </div>
