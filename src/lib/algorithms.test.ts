@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nearestNeighbor, sweep, twoOpt } from './algorithms';
+import { nearestNeighbor, sweep, twoOpt, checkRouteFeasible } from './algorithms';
 import type { RouteNode, ProcessingParams } from '../types';
 
 const depot: RouteNode = {
@@ -96,5 +96,33 @@ describe('twoOpt', () => {
       return d;
     };
     expect(dist(after)).toBeLessThanOrEqual(dist(before) + 0.001);
+  });
+});
+
+describe('checkRouteFeasible', () => {
+  it('returns true for a route within capacity and no time windows', () => {
+    const route = [1, 2];
+    expect(checkRouteFeasible(route, nodes, baseParams)).toBe(true);
+  });
+
+  it('returns false when route volume exceeds max capacity', () => {
+    const heavyParams: ProcessingParams = {
+      ...baseParams,
+      fleetPool: [{ id: 'v1', type: '4-wheel', name: 'Truck', capacityCBM: 5, fuelConsumption: 0.12, color: '#10B981' }],
+    };
+    const route = [1, 2]; // combined demandVolume = 10, capacity = 5
+    expect(checkRouteFeasible(route, nodes, heavyParams)).toBe(false);
+  });
+
+  it('returns false when a node is reached after its due time', () => {
+    const lateDepot: RouteNode = { ...depot };
+    const strictNode: RouteNode = {
+      id: 5, location: 'Strict', lat: 20.0, lon: 100.5,
+      demandVolume: 1, weight: 0,
+      readyTime: null,
+      dueTime: new Date('2024-01-01T08:05:00'), // 5 min after startTime, node is ~700km away
+    };
+    const strictNodes = [lateDepot, strictNode];
+    expect(checkRouteFeasible([1], strictNodes, baseParams)).toBe(false);
   });
 });

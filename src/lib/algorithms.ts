@@ -11,30 +11,33 @@ function nodeVol(node: RouteNode): number {
   return isNaN(node.demandVolume) ? 0 : node.demandVolume;
 }
 
-export function clarkWrightSavings(nodes: RouteNode[], params: ProcessingParams): number[][] {
+export function checkRouteFeasible(routeSeq: number[], nodes: RouteNode[], params: ProcessingParams): boolean {
   const depot = nodes[0];
   const maxCapacity = getMaxCapacity(params);
 
-  const checkConstraints = (routeSeq: number[]): boolean => {
-    let routeVolume = 0;
-    for (const idx of routeSeq) routeVolume += nodeVol(nodes[idx]);
-    if (routeVolume > maxCapacity) return false;
+  let routeVolume = 0;
+  for (const idx of routeSeq) routeVolume += nodeVol(nodes[idx]);
+  if (routeVolume > maxCapacity) return false;
 
-    let currentTime = params.startTime;
-    let currentLoc = depot;
-    for (const idx of routeSeq) {
-      const node = nodes[idx];
-      const dist = getFallbackDist([currentLoc.lon, currentLoc.lat], [node.lon, node.lat]);
-      const durationSec = (dist / params.avgSpeed) * 3600;
-      const arrivalTime = new Date(currentTime.getTime() + durationSec * 1000);
-      let departureTime = arrivalTime;
-      if (node.readyTime && arrivalTime < node.readyTime) departureTime = node.readyTime;
-      if (node.dueTime && arrivalTime > node.dueTime) return false;
-      currentTime = new Date(departureTime.getTime() + 30 * 60 * 1000);
-      currentLoc = node;
-    }
-    return true;
-  };
+  let currentTime = params.startTime;
+  let currentLoc = depot;
+  for (const idx of routeSeq) {
+    const node = nodes[idx];
+    const dist = getFallbackDist([currentLoc.lon, currentLoc.lat], [node.lon, node.lat]);
+    const durationSec = (dist / params.avgSpeed) * 3600;
+    const arrivalTime = new Date(currentTime.getTime() + durationSec * 1000);
+    let departureTime = arrivalTime;
+    if (node.readyTime && arrivalTime < node.readyTime) departureTime = node.readyTime;
+    if (node.dueTime && arrivalTime > node.dueTime) return false;
+    currentTime = new Date(departureTime.getTime() + 30 * 60 * 1000);
+    currentLoc = node;
+  }
+  return true;
+}
+
+export function clarkWrightSavings(nodes: RouteNode[], params: ProcessingParams): number[][] {
+  const depot = nodes[0];
+  const maxCapacity = getMaxCapacity(params);
 
   const savings: { i: number; j: number; savings: number }[] = [];
   for (let i = 1; i < nodes.length; i++) {
@@ -70,7 +73,7 @@ export function clarkWrightSavings(nodes: RouteNode[], params: ProcessingParams)
       if (iIsFirst) ri.reverse();
       if (jIsLast) rj.reverse();
       const proposed = [...ri, ...rj];
-      if (checkConstraints(proposed)) {
+      if (checkRouteFeasible(proposed, nodes, params)) {
         routes = routes.filter((_, idx) => idx !== routeIIdx && idx !== routeJIdx);
         routes.push(proposed);
       }
