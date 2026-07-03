@@ -49,7 +49,7 @@ export interface ProcessingParams {
   fuelPrice4W: number;
   fuelPrice6W: number;
   fuelPrice10W: number;
-  algorithm: 'savings' | 'nearest-neighbor' | 'sweep';
+  algorithm: 'savings' | 'nearest-neighbor' | 'sweep' | 'or-opt-sa';
   applyTwoOpt: boolean;
 }
 
