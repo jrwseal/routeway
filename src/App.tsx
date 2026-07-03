@@ -36,6 +36,7 @@ export default function App() {
   const [isComparing, setIsComparing] = useState(false);
 
   const handleDataLoaded = (nodes: RouteNode[]) => {
+    setComparisonData(null);
     if (nodes.length < 2) {
       alert("Manifest must contain at least a Depot and one customer node.");
       return;
