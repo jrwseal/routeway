@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nearestNeighbor, sweep, twoOpt, checkRouteFeasible } from './algorithms';
+import { nearestNeighbor, sweep, twoOpt, checkRouteFeasible, orOptAnnealing, clarkWrightSavings } from './algorithms';
 import type { RouteNode, ProcessingParams } from '../types';
 
 const depot: RouteNode = {
@@ -124,5 +124,54 @@ describe('checkRouteFeasible', () => {
     };
     const strictNodes = [lateDepot, strictNode];
     expect(checkRouteFeasible([1], strictNodes, baseParams)).toBe(false);
+  });
+});
+
+describe('orOptAnnealing', () => {
+  it('covers all customer nodes exactly once', () => {
+    const routes = orOptAnnealing(nodes, baseParams);
+    const allIdx = routes.flat().sort((a, b) => a - b);
+    expect(allIdx).toEqual([1, 2, 3, 4]);
+  });
+
+  it('no route exceeds max capacity', () => {
+    const routes = orOptAnnealing(nodes, baseParams);
+    for (const route of routes) {
+      const vol = route.reduce((s, i) => s + nodes[i].demandVolume, 0);
+      expect(vol).toBeLessThanOrEqual(20);
+    }
+  });
+
+  it('every route is time-window feasible', () => {
+    const routes = orOptAnnealing(nodes, baseParams);
+    for (const route of routes) {
+      expect(checkRouteFeasible(route, nodes, baseParams)).toBe(true);
+    }
+  });
+
+  it('produces no route worse than the Clarke-Wright seed on a simple case', () => {
+    const seedRoutes = clarkWrightSavings(nodes, baseParams);
+    const seedDist = seedRoutes.reduce((total, r) => {
+      const full = [0, ...r, 0];
+      let d = 0;
+      for (let i = 0; i < full.length - 1; i++) {
+        const a = nodes[full[i]], b = nodes[full[i + 1]];
+        d += Math.hypot(a.lat - b.lat, a.lon - b.lon);
+      }
+      return total + d;
+    }, 0);
+
+    const annealedRoutes = orOptAnnealing(nodes, baseParams);
+    const annealedDist = annealedRoutes.reduce((total, r) => {
+      const full = [0, ...r, 0];
+      let d = 0;
+      for (let i = 0; i < full.length - 1; i++) {
+        const a = nodes[full[i]], b = nodes[full[i + 1]];
+        d += Math.hypot(a.lat - b.lat, a.lon - b.lon);
+      }
+      return total + d;
+    }, 0);
+
+    expect(annealedDist).toBeLessThanOrEqual(seedDist + 0.001);
   });
 });

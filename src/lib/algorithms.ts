@@ -192,3 +192,83 @@ export function twoOpt(route: number[], nodes: RouteNode[]): number[] {
 
   return best;
 }
+
+function routeDistance(routeSeq: number[], nodes: RouteNode[]): number {
+  const depot = nodes[0];
+  const full = [0, ...routeSeq, 0];
+  let d = 0;
+  for (let i = 0; i < full.length - 1; i++) {
+    const a = full[i] === 0 ? depot : nodes[full[i]];
+    const b = full[i + 1] === 0 ? depot : nodes[full[i + 1]];
+    d += getFallbackDist([a.lon, a.lat], [b.lon, b.lat]);
+  }
+  return d;
+}
+
+function totalDistance(routes: number[][], nodes: RouteNode[]): number {
+  return routes.reduce((sum, r) => sum + routeDistance(r, nodes), 0);
+}
+
+export function orOptAnnealing(nodes: RouteNode[], params: ProcessingParams): number[][] {
+  const ITERATIONS = 500;
+  let routes: number[][] = clarkWrightSavings(nodes, params).map(r => [...r]);
+  let bestRoutes: number[][] = routes.map(r => [...r]);
+  let bestCost = totalDistance(bestRoutes, nodes);
+  let currentCost = bestCost;
+
+  const initialT = currentCost > 0 ? currentCost / Math.max(nodes.length - 1, 1) : 1;
+  let temperature = initialT;
+
+  for (let iter = 0; iter < ITERATIONS; iter++) {
+    temperature *= 0.99;
+
+    const sourceCandidates = routes
+      .map((r, idx) => ({ r, idx }))
+      .filter(({ r }) => r.length > 0);
+    if (sourceCandidates.length === 0) break;
+
+    const { idx: sourceIdx } = sourceCandidates[Math.floor(Math.random() * sourceCandidates.length)];
+    const sourceRoute = routes[sourceIdx];
+
+    const segLen = Math.min(1 + Math.floor(Math.random() * 3), sourceRoute.length);
+    const segStart = Math.floor(Math.random() * (sourceRoute.length - segLen + 1));
+    const segment = sourceRoute.slice(segStart, segStart + segLen);
+
+    const targetIdx = Math.floor(Math.random() * routes.length);
+
+    const newSourceRoute = [...sourceRoute.slice(0, segStart), ...sourceRoute.slice(segStart + segLen)];
+
+    const targetBaseRoute = targetIdx === sourceIdx ? newSourceRoute : routes[targetIdx];
+    const insertPos = Math.floor(Math.random() * (targetBaseRoute.length + 1));
+    const newTargetRoute = [
+      ...targetBaseRoute.slice(0, insertPos),
+      ...segment,
+      ...targetBaseRoute.slice(insertPos),
+    ];
+
+    const candidateRoutes = routes.map((r, i) => {
+      if (i === sourceIdx && i === targetIdx) return newTargetRoute;
+      if (i === sourceIdx) return newSourceRoute;
+      if (i === targetIdx) return newTargetRoute;
+      return r;
+    }).filter(r => r.length > 0);
+
+    if (newSourceRoute.length > 0 && !checkRouteFeasible(newSourceRoute, nodes, params)) continue;
+    if (!checkRouteFeasible(newTargetRoute, nodes, params)) continue;
+
+    const candidateCost = totalDistance(candidateRoutes, nodes);
+    const delta = candidateCost - currentCost;
+
+    const accept = delta < 0 || Math.random() < Math.exp(-delta / Math.max(temperature, 0.0001));
+    if (accept) {
+      routes = candidateRoutes;
+      currentCost = candidateCost;
+      if (candidateCost < bestCost) {
+        bestCost = candidateCost;
+        bestRoutes = candidateRoutes.map(r => [...r]);
+      }
+    }
+  }
+
+  return bestRoutes.map(r => twoOpt(r, nodes));
+}
