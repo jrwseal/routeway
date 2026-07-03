@@ -5,9 +5,16 @@ import RouteMap from "./RouteMap";
 
 interface DashboardProps {
   data: ProcessedData;
+  savingsBaseline?: ProcessedData | null;
 }
 
-export default function Dashboard({ data }: DashboardProps) {
+export default function Dashboard({ data, savingsBaseline }: DashboardProps) {
+  const baselineDistance = savingsBaseline ? savingsBaseline.milkRunDistance : data.traditionalDistance;
+  const isSavingsBaseline = !!savingsBaseline;
+  const distanceSavingsPct = baselineDistance > 0
+    ? ((baselineDistance - data.milkRunDistance) / baselineDistance) * 100
+    : 0;
+
   return (
     <div className="p-8 pb-20 animate-fade-in w-full max-w-7xl mx-auto">
       <div className="mb-8">
@@ -36,12 +43,12 @@ export default function Dashboard({ data }: DashboardProps) {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-500">
-              Traditional Dist (km)
+              {isSavingsBaseline ? 'Savings Dist (km)' : 'Traditional Dist (km)'}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-slate-700">
-              {data.traditionalDistance.toFixed(1)}
+              {baselineDistance.toFixed(1)}
             </div>
           </CardContent>
         </Card>
@@ -62,12 +69,12 @@ export default function Dashboard({ data }: DashboardProps) {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-slate-500">
-              Distance Savings
+              {isSavingsBaseline ? 'vs Savings' : 'Distance Savings'}
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#10B981]">
-              {data.savingsPercentage.toFixed(1)}%
+            <div className={`text-3xl font-bold ${distanceSavingsPct >= 0 ? 'text-[#10B981]' : 'text-red-600'}`}>
+              {distanceSavingsPct > 0 ? '+' : ''}{distanceSavingsPct.toFixed(1)}%
             </div>
           </CardContent>
         </Card>

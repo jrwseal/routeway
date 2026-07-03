@@ -18,6 +18,12 @@ export default function AlgorithmComparison({ data, onSelectVariant }: Props) {
   const bestCO2 = bestIdx(data, 'milkRunCO2');
   const bestTrucks = bestIdx(data, 'totalTrucksUsed');
 
+  const savingsBaseline = data.find((r) => r.algorithm === 'Clarke-Wright' && !r.twoOpt) ?? data[0];
+  const vsSavingsPct = (dist: number) =>
+    savingsBaseline.milkRunDistance > 0
+      ? ((savingsBaseline.milkRunDistance - dist) / savingsBaseline.milkRunDistance) * 100
+      : 0;
+
   const colClass = (rowIdx: number, metricBest: number) =>
     rowIdx === metricBest
       ? 'bg-emerald-50 text-emerald-800 font-bold'
@@ -35,6 +41,7 @@ export default function AlgorithmComparison({ data, onSelectVariant }: Props) {
               <th className="px-4 py-3 text-left font-semibold">Algorithm</th>
               <th className="px-4 py-3 text-left font-semibold">2-opt</th>
               <th className="px-4 py-3 text-right font-semibold">Distance (km)</th>
+              <th className="px-4 py-3 text-right font-semibold">vs Savings</th>
               <th className="px-4 py-3 text-right font-semibold">Cost (฿)</th>
               <th className="px-4 py-3 text-right font-semibold">CO₂ (kg)</th>
               <th className="px-4 py-3 text-right font-semibold">Trucks</th>
@@ -48,6 +55,11 @@ export default function AlgorithmComparison({ data, onSelectVariant }: Props) {
                 <td className="px-4 py-3 text-slate-500">{row.twoOpt ? '✓' : '—'}</td>
                 <td className={`px-4 py-3 text-right rounded ${colClass(i, bestDist)}`}>
                   {row.milkRunDistance.toFixed(1)}
+                </td>
+                <td className={`px-4 py-3 text-right ${vsSavingsPct(row.milkRunDistance) > 0 ? 'text-emerald-700' : vsSavingsPct(row.milkRunDistance) < 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                  {row === savingsBaseline
+                    ? 'baseline'
+                    : `${vsSavingsPct(row.milkRunDistance) > 0 ? '+' : ''}${vsSavingsPct(row.milkRunDistance).toFixed(1)}%`}
                 </td>
                 <td className={`px-4 py-3 text-right rounded ${colClass(i, bestCost)}`}>
                   {row.milkRunCost.toLocaleString('th-TH', { maximumFractionDigits: 0 })}

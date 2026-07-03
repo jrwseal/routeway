@@ -30,10 +30,12 @@ export default function App() {
 
   const [comparisonData, setComparisonData] = useState<ComparisonResult[] | null>(null);
   const [variantResults, setVariantResults] = useState<ProcessedData[]>([]);
+  const [savingsBaseline, setSavingsBaseline] = useState<ProcessedData | null>(null);
   const [isComparing, setIsComparing] = useState(false);
 
   const handleDataLoaded = (nodes: RouteNode[]) => {
     setComparisonData(null);
+    setSavingsBaseline(null);
     if (nodes.length < 2) {
       alert("Manifest must contain at least a Depot and one customer node.");
       return;
@@ -115,6 +117,9 @@ export default function App() {
     }
     setVariantResults(variantData);
 
+    const savingsIdx = comparison.findIndex(c => c.algorithm === 'Clarke-Wright' && !c.twoOpt);
+    setSavingsBaseline(savingsIdx >= 0 ? variantData[savingsIdx] : null);
+
     setComparisonData(comparison);
     setCurrentTab('comparison');
     setIsComparing(false);
@@ -156,7 +161,7 @@ export default function App() {
           </div>
         ) : (
           <>
-            {currentTab === 'dashboard' && <Dashboard data={processedData} />}
+            {currentTab === 'dashboard' && <Dashboard data={processedData} savingsBaseline={savingsBaseline} />}
             {currentTab === 'statistics' && <StatisticsCar data={processedData} />}
             {currentTab === 'driver' && (
               <DriverPortal
