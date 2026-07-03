@@ -10,13 +10,14 @@ interface SidebarProps {
   onDataLoaded: (nodes: RouteNode[]) => void;
   isProcessing: boolean;
   hasData: boolean;
+  hasComparison: boolean;
   avgSpeed: number;
   setAvgSpeed: (val: number) => void;
   setIsFleetConfigOpen: (isOpen: boolean) => void;
 }
 
 export default function Sidebar({
-  currentTab, setCurrentTab, onDataLoaded, isProcessing, hasData,
+  currentTab, setCurrentTab, onDataLoaded, isProcessing, hasData, hasComparison,
   avgSpeed, setAvgSpeed, setIsFleetConfigOpen
 }: SidebarProps) {
 
@@ -90,7 +91,8 @@ export default function Sidebar({
     { id: 'dashboard', label: 'Dashboard & Savings', icon: <Truck className="w-4 h-4 mr-2" /> },
     { id: 'driver', label: 'Interactive Driver Portal', icon: <Navigation className="w-4 h-4 mr-2" /> },
     { id: 'carbon', label: 'Carbon Footprint', icon: <Leaf className="w-4 h-4 mr-2" /> },
-    { id: 'statistics', label: 'Statistics car', icon: <BarChart className="w-4 h-4 mr-2" /> }
+    { id: 'statistics', label: 'Statistics car', icon: <BarChart className="w-4 h-4 mr-2" /> },
+    { id: 'comparison', label: 'Algorithm Comparison', icon: <BarChart className="w-4 h-4 mr-2" /> },
   ];
 
   return (
@@ -133,7 +135,7 @@ export default function Sidebar({
         {menuItems.map(item => (
           <button
             key={item.id}
-            disabled={!hasData}
+            disabled={item.id === 'comparison' ? !hasComparison : !hasData}
             onClick={() => setCurrentTab(item.id)}
             className={`flex items-center px-4 py-3 rounded-md text-sm font-medium transition-colors ${
               currentTab === item.id 

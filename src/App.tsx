@@ -177,7 +177,6 @@ export default function App() {
         isProcessing={isProcessing}
         hasData={processedData !== null}
         hasComparison={comparisonData !== null}
-        comparisonData={comparisonData}
         avgSpeed={avgSpeed}
         setAvgSpeed={setAvgSpeed}
         setIsFleetConfigOpen={setIsFleetConfigOpen}
