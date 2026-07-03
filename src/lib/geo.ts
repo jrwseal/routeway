@@ -7,6 +7,7 @@ import {
   RouteSummary,
 } from "../types";
 import { addSeconds, isAfter, isBefore } from "date-fns";
+import { clarkWrightSavings, nearestNeighbor, sweep, twoOpt } from './algorithms';
 
 function deg2rad(deg: number) {
   return deg * (Math.PI / 180);
@@ -206,115 +207,18 @@ export async function processData(
       (waitMin / 60) * params.driverWage;
   }
 
-  // 1. CORE CLARKE-WRIGHT SAVINGS CALCULATION
-  const savings: { i: number; j: number; savings: number }[] = [];
-  for (let i = 1; i < nodes.length; i++) {
-    for (let j = i + 1; j < nodes.length; j++) {
-      const distDepotI = getFallbackDist(
-        [depot.lon, depot.lat],
-        [nodes[i].lon, nodes[i].lat],
-      );
-      const distDepotJ = getFallbackDist(
-        [depot.lon, depot.lat],
-        [nodes[j].lon, nodes[j].lat],
-      );
-      const distIJ = getFallbackDist(
-        [nodes[i].lon, nodes[i].lat],
-        [nodes[j].lon, nodes[j].lat],
-      );
-      const s = distDepotI + distDepotJ - distIJ;
-      if (s > 0) {
-        savings.push({ i, j, savings: s });
-      }
+  // 1. BUILD ROUTES via selected algorithm
+  function buildRoutes(): number[][] {
+    switch (params.algorithm) {
+      case 'nearest-neighbor': return nearestNeighbor(nodes, params);
+      case 'sweep': return sweep(nodes, params);
+      default: return clarkWrightSavings(nodes, params);
     }
   }
-  savings.sort((a, b) => b.savings - a.savings);
 
-  // 2. ITERATIVE ROUTE MERGING & CONSTRAINT CHECKING
-  let routes: number[][] = [];
-  for (let i = 1; i < nodes.length; i++) {
-    routes.push([i]);
-  }
-
-  const maxCapacity =
-    params.fleetPool.length > 0
-      ? Math.max(...params.fleetPool.map((v) => v.capacityCBM))
-      : 0;
-
-  const checkConstraints = (routeSeq: number[]): boolean => {
-    // Capacity Constraint
-    let routeVolume = 0;
-    for (const idx of routeSeq) {
-      routeVolume += isNaN(nodes[idx].demandVolume)
-        ? 0
-        : nodes[idx].demandVolume;
-    }
-    if (routeVolume > maxCapacity) return false;
-
-    // Time Window Constraint
-    let currentTime = params.startTime;
-    let currentLoc = depot;
-    for (const idx of routeSeq) {
-      const node = nodes[idx];
-      const dist = getFallbackDist(
-        [currentLoc.lon, currentLoc.lat],
-        [node.lon, node.lat],
-      );
-      const durationSec = (dist / params.avgSpeed) * 3600;
-      const arrivalTime = addSeconds(currentTime, durationSec);
-
-      let departureTime = arrivalTime;
-      if (node.readyTime && isBefore(arrivalTime, node.readyTime)) {
-        departureTime = node.readyTime;
-      }
-
-      if (node.dueTime && arrivalTime.getTime() > node.dueTime.getTime()) {
-        return false; // Time Window violated
-      }
-
-      currentTime = addSeconds(departureTime, 30 * 60); // 30 mins service time
-      currentLoc = node;
-    }
-    return true;
-  };
-
-  for (const s of savings) {
-    const { i, j } = s;
-    let routeIIdx = -1;
-    let routeJIdx = -1;
-
-    for (let r = 0; r < routes.length; r++) {
-      if (routes[r].includes(i)) routeIIdx = r;
-      if (routes[r].includes(j)) routeJIdx = r;
-    }
-
-    // Attempt to merge only if they are in different routes
-    if (routeIIdx !== -1 && routeJIdx !== -1 && routeIIdx !== routeJIdx) {
-      const routeI = routes[routeIIdx];
-      const routeJ = routes[routeJIdx];
-
-      const iIsFirst = routeI[0] === i;
-      const iIsLast = routeI[routeI.length - 1] === i;
-      const jIsFirst = routeJ[0] === j;
-      const jIsLast = routeJ[routeJ.length - 1] === j;
-
-      if ((iIsFirst || iIsLast) && (jIsFirst || jIsLast)) {
-        let ri = [...routeI];
-        let rj = [...routeJ];
-
-        if (iIsFirst) ri.reverse();
-        if (jIsLast) rj.reverse();
-
-        const proposedRoute = [...ri, ...rj];
-
-        if (checkConstraints(proposedRoute)) {
-          routes = routes.filter(
-            (_, idx) => idx !== routeIIdx && idx !== routeJIdx,
-          );
-          routes.push(proposedRoute);
-        }
-      }
-    }
+  let routes = buildRoutes();
+  if (params.applyTwoOpt) {
+    routes = routes.map(r => twoOpt(r, nodes));
   }
 
   // 3. BEST-FIT / GREEN FLEET SELECTION & CO2 CALCULATION
