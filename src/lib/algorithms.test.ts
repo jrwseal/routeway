@@ -259,16 +259,21 @@ describe('solomonI1', () => {
     expect(solomonDist).toBeLessThanOrEqual(perCustomerDist + 0.001);
   });
 
-  it('starts each new route with the customer farthest from the depot', () => {
-    // With the shared 4-node fixture (all within max capacity 20), everything
-    // fits in a single route, so the very first (and only) route's first
-    // customer must be the farthest one from the depot.
-    const routes = solomonI1(nodes, baseParams);
-    const farthest = [1, 2, 3, 4].reduce((bi, i) => {
-      const di = getFallbackDist([depot.lon, depot.lat], [nodes[i].lon, nodes[i].lat]);
-      const db = getFallbackDist([depot.lon, depot.lat], [nodes[bi].lon, nodes[bi].lat]);
-      return di > db ? i : bi;
-    }, 1);
-    expect(routes[0][0]).toBe(farthest);
+  it('starts each new route with the farthest remaining customer (seed order)', () => {
+    // Force one customer per route (capacity 5 == each customer's demandVolume)
+    // so seed selection is directly observable — no later insertion can ever
+    // reposition anything once a route already holds its one customer.
+    const tightParams: ProcessingParams = {
+      ...baseParams,
+      fleetPool: [{ id: 'v1', type: '4-wheel', name: 'Truck', capacityCBM: 5, fuelConsumption: 0.12, fixedCost: 0, color: '#10B981' }],
+    };
+    const routes = solomonI1(nodes, tightParams);
+    for (const route of routes) expect(route.length).toBe(1);
+
+    const expectedOrder = [1, 2, 3, 4].slice().sort((a, b) =>
+      getFallbackDist([depot.lon, depot.lat], [nodes[b].lon, nodes[b].lat]) -
+      getFallbackDist([depot.lon, depot.lat], [nodes[a].lon, nodes[a].lat])
+    );
+    expect(routes.map(r => r[0])).toEqual(expectedOrder);
   });
 });

@@ -313,9 +313,7 @@ export function solomonI1(nodes: RouteNode[], params: ProcessingParams): number[
   function bestInsertion(route: number[], u: number): { pos: number; cost: number } | null {
     let bestPos = -1;
     let bestCost = Infinity;
-    // Start from position 1 if route is non-empty to preserve the seed at position 0
-    const startPos = route.length > 0 ? 1 : 0;
-    for (let pos = startPos; pos <= route.length; pos++) {
+    for (let pos = 0; pos <= route.length; pos++) {
       const i = pos === 0 ? 0 : route[pos - 1];
       const j = pos === route.length ? 0 : route[pos];
       const c1 = distBetween(i, u) + distBetween(u, j) - distBetween(i, j);
