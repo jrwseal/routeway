@@ -63,7 +63,7 @@ export default function App() {
       }
     }
 
-    const variants: { algorithm: 'savings' | 'nearest-neighbor' | 'sweep' | 'or-opt-sa'; applyTwoOpt: boolean }[] = [
+    const variants: { algorithm: 'savings' | 'nearest-neighbor' | 'sweep' | 'or-opt-sa' | 'solomon-i1'; applyTwoOpt: boolean }[] = [
       { algorithm: 'savings', applyTwoOpt: false },
       { algorithm: 'savings', applyTwoOpt: true },
       { algorithm: 'nearest-neighbor', applyTwoOpt: false },
@@ -71,6 +71,8 @@ export default function App() {
       { algorithm: 'sweep', applyTwoOpt: false },
       { algorithm: 'sweep', applyTwoOpt: true },
       { algorithm: 'or-opt-sa', applyTwoOpt: false },
+      { algorithm: 'solomon-i1', applyTwoOpt: false },
+      { algorithm: 'solomon-i1', applyTwoOpt: true },
     ];
 
     const baseParams = {
@@ -88,6 +90,7 @@ export default function App() {
       'nearest-neighbor': 'Nearest Neighbor',
       sweep: 'Sweep',
       'or-opt-sa': 'Or-opt + SA',
+      'solomon-i1': 'Solomon I1',
     };
 
     const results = await Promise.allSettled(
