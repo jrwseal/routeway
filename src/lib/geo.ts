@@ -20,6 +20,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     name: "รถบรรทุก 4 ล้อใหญ่ - คันที่ 1",
     capacityCBM: 12,
     fuelConsumption: 0.12,
+    fixedCost: 0,
     color: "#10B981",
   },
   {
@@ -28,6 +29,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     name: "รถบรรทุก 4 ล้อใหญ่ - คันที่ 2",
     capacityCBM: 12,
     fuelConsumption: 0.12,
+    fixedCost: 0,
     color: "#10B981",
   },
   {
@@ -36,6 +38,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     name: "รถบรรทุก 4 ล้อใหญ่ - คันที่ 3",
     capacityCBM: 12,
     fuelConsumption: 0.12,
+    fixedCost: 0,
     color: "#10B981",
   },
   {
@@ -44,6 +47,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     name: "รถบรรทุก 6 ล้อ - คันที่ 1",
     capacityCBM: 32,
     fuelConsumption: 0.2,
+    fixedCost: 0,
     color: "#3B82F6",
   },
   {
@@ -52,6 +56,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     name: "รถบรรทุก 6 ล้อ - คันที่ 2",
     capacityCBM: 32,
     fuelConsumption: 0.2,
+    fixedCost: 0,
     color: "#3B82F6",
   },
   {
@@ -60,6 +65,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     name: "รถบรรทุก 6 ล้อ - คันที่ 3",
     capacityCBM: 32,
     fuelConsumption: 0.2,
+    fixedCost: 0,
     color: "#3B82F6",
   },
   {
@@ -68,6 +74,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     name: "รถบรรทุก 10 ล้อ - คันที่ 1",
     capacityCBM: 48,
     fuelConsumption: 0.28,
+    fixedCost: 0,
     color: "#F97316",
   },
   {
@@ -76,6 +83,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     name: "รถบรรทุก 10 ล้อ - คันที่ 2",
     capacityCBM: 48,
     fuelConsumption: 0.28,
+    fixedCost: 0,
     color: "#F97316",
   },
   {
@@ -84,6 +92,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     name: "รถบรรทุก 10 ล้อ - คันที่ 3",
     capacityCBM: 48,
     fuelConsumption: 0.28,
+    fixedCost: 0,
     color: "#F97316",
   },
 ];
@@ -204,7 +213,8 @@ export async function processData(
       roundTripDist *
         baselineVehicle.fuelConsumption *
         getFuelPrice(baselineVehicle.type) +
-      (waitMin / 60) * params.driverWage;
+      (waitMin / 60) * params.driverWage +
+      baselineVehicle.fixedCost;
   }
 
   // 1. BUILD ROUTES via selected algorithm
@@ -334,7 +344,8 @@ export async function processData(
       routeDistance *
         assignedVehicle.fuelConsumption *
         getFuelPrice(assignedVehicle.type) +
-      (routeWaitingMinutes / 60) * params.driverWage;
+      (routeWaitingMinutes / 60) * params.driverWage +
+      assignedVehicle.fixedCost;
 
     routeSummaries.push({
       routeIndex,

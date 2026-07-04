@@ -17,6 +17,7 @@ export interface Vehicle {
   name: string;
   capacityCBM: number;
   fuelConsumption: number;
+  fixedCost: number;
   color: string;
 }
 

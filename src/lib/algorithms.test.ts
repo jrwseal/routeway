@@ -13,7 +13,7 @@ const makeNode = (id: number, lat: number, lon: number, vol: number): RouteNode 
 });
 
 const baseParams: ProcessingParams = {
-  fleetPool: [{ id: 'v1', type: '4-wheel', name: 'Truck', capacityCBM: 20, fuelConsumption: 0.12, color: '#10B981' }],
+  fleetPool: [{ id: 'v1', type: '4-wheel', name: 'Truck', capacityCBM: 20, fuelConsumption: 0.12, fixedCost: 0, color: '#10B981' }],
   avgSpeed: 50,
   startTime: new Date('2024-01-01T08:00:00'),
   driverWage: 60,
@@ -109,7 +109,7 @@ describe('checkRouteFeasible', () => {
   it('returns false when route volume exceeds max capacity', () => {
     const heavyParams: ProcessingParams = {
       ...baseParams,
-      fleetPool: [{ id: 'v1', type: '4-wheel', name: 'Truck', capacityCBM: 5, fuelConsumption: 0.12, color: '#10B981' }],
+      fleetPool: [{ id: 'v1', type: '4-wheel', name: 'Truck', capacityCBM: 5, fuelConsumption: 0.12, fixedCost: 0, color: '#10B981' }],
     };
     const route = [1, 2]; // combined demandVolume = 10, capacity = 5
     expect(checkRouteFeasible(route, nodes, heavyParams)).toBe(false);

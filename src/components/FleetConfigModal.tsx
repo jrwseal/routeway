@@ -127,7 +127,7 @@ export default function FleetConfigModal({ isOpen, onClose, activeFleetPool, ini
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">Capacity (CBM)</label>
-                  <input 
+                  <input
                     type="number"
                     step="0.1"
                     value={v.capacityCBM}
@@ -137,11 +137,22 @@ export default function FleetConfigModal({ isOpen, onClose, activeFleetPool, ini
                 </div>
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">Fuel (L/km)</label>
-                  <input 
+                  <input
                     type="number"
                     step="0.01"
                     value={v.fuelConsumption}
                     onChange={(e) => updateVehicle(v.id, 'fuelConsumption', Number(e.target.value))}
+                    className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm bg-white"
+                  />
+                </div>
+                <div className="col-span-2">
+                  <label className="text-xs font-semibold text-slate-600 block mb-1">Fixed Cost (บาท/เที่ยว)</label>
+                  <input
+                    type="number"
+                    step="1"
+                    min="0"
+                    value={v.fixedCost}
+                    onChange={(e) => updateVehicle(v.id, 'fixedCost', Number(e.target.value))}
                     className="w-full border border-slate-300 rounded px-2 py-1.5 text-sm bg-white"
                   />
                 </div>
