@@ -100,7 +100,7 @@ export default function FleetConfigModal({ isOpen, onClose, activeFleetPool, ini
                min="0"
                value={vehicles.length}
                onChange={(e) => updateVehicleCount(type, parseInt(e.target.value) || 0)}
-               className="w-full border border-slate-300 rounded px-2 py-1 text-sm bg-white font-bold text-center text-[#1E3A8A]"
+               className="w-full border border-slate-300 rounded px-2 py-1 text-sm bg-white font-bold text-center text-fleet-navy"
              />
           </div>
         </div>
@@ -114,7 +114,7 @@ export default function FleetConfigModal({ isOpen, onClose, activeFleetPool, ini
               step="0.01"
               value={fuelPrice}
               onChange={(e) => setFuelPrice(Number(e.target.value))}
-              className="w-16 border border-slate-300 rounded px-2 py-1 text-sm bg-white font-bold text-center text-[#1E3A8A] focus:ring-1 focus:ring-[#1E3A8A] focus:outline-none"
+              className="w-16 border border-slate-300 rounded px-2 py-1 text-sm bg-white font-bold text-center text-fleet-navy focus:ring-1 focus:ring-fleet-navy focus:outline-none"
             />
             <span className="text-sm font-bold text-slate-600 ml-2">บาท / ลิตร</span>
           </div>
@@ -123,7 +123,7 @@ export default function FleetConfigModal({ isOpen, onClose, activeFleetPool, ini
         <div className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
           {vehicles.map((v, idx) => (
             <div key={v.id} className="bg-slate-50 p-3 rounded-lg border border-slate-100">
-              <div className="font-medium text-sm text-[#1E3A8A] mb-2">{v.name}</div>
+              <div className="font-medium text-sm text-fleet-navy mb-2">{v.name}</div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-xs font-semibold text-slate-600 block mb-1">Capacity (CBM)</label>
@@ -169,7 +169,7 @@ export default function FleetConfigModal({ isOpen, onClose, activeFleetPool, ini
       <div className="bg-slate-50 rounded-2xl shadow-xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden animate-fade-in">
         {/* Header */}
         <div className="bg-white px-6 py-4 border-b border-slate-200 flex justify-between items-center">
-          <h2 className="text-2xl font-bold text-[#1E3A8A] flex items-center">
+          <h2 className="text-2xl font-bold text-fleet-navy flex items-center">
             <span className="text-2xl mr-2">⚙️</span> ตั้งค่ากองรถ (Dynamic Fleet Configuration)
           </h2>
           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full transition-colors text-slate-500">
@@ -190,7 +190,7 @@ export default function FleetConfigModal({ isOpen, onClose, activeFleetPool, ini
                 min="0"
                 value={localDriverWage}
                 onChange={(e) => setLocalDriverWage(Number(e.target.value))}
-                className="w-24 border border-slate-300 rounded-md px-3 py-1.5 text-lg font-bold text-center text-[#1E3A8A] focus:ring-2 focus:ring-[#1E3A8A] focus:outline-none"
+                className="w-24 border border-slate-300 rounded-md px-3 py-1.5 text-lg font-bold text-center text-fleet-navy focus:ring-2 focus:ring-fleet-navy focus:outline-none"
               />
               <span className="font-bold text-slate-700 text-lg ml-3">
                 บาท / ชั่วโมง
@@ -217,7 +217,7 @@ export default function FleetConfigModal({ isOpen, onClose, activeFleetPool, ini
           
           <button 
             onClick={handleSave}
-            className="flex items-center px-6 py-2 bg-[#1E3A8A] text-white hover:bg-blue-800 rounded-md font-bold text-sm transition-colors shadow-md"
+            className="flex items-center px-6 py-2 bg-fleet-navy text-white hover:bg-blue-800 rounded-md font-bold text-sm transition-colors shadow-md"
           >
             <Save className="w-4 h-4 mr-2" />
             💾 บันทึกและใช้งานกองรถนี้

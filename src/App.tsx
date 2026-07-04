@@ -8,11 +8,12 @@ import StatisticsCar from './components/StatisticsCar';
 import AlgorithmComparison from './components/AlgorithmComparison';
 import ComparisonPopup from './components/ComparisonPopup';
 import { processData, DEFAULT_FLEET_POOL } from './lib/geo';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import { AlertCircle, Loader2, Menu } from 'lucide-react';
 import FleetConfigModal from './components/FleetConfigModal';
 
 export default function App() {
   const [currentTab, setCurrentTab] = useState('dashboard');
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [stepState, setStepState] = useState<'pending' | 'in_transit'>('pending');
@@ -134,7 +135,20 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-full bg-[#F8FAFC] overflow-hidden font-sans">
+    <div className="flex flex-col lg:flex-row h-screen w-full bg-neutral-canvas overflow-hidden font-sans">
+      {/* Mobile top bar */}
+      <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white flex-shrink-0">
+        <span className="text-lg font-bold text-fleet-navy">RouteWay</span>
+        <button
+          type="button"
+          onClick={() => setIsMobileNavOpen(true)}
+          aria-label="Open navigation menu"
+          className="p-2 text-slate-600 hover:text-fleet-navy"
+        >
+          <Menu className="w-6 h-6" />
+        </button>
+      </div>
+
       {/* Sidebar Layout */}
       <Sidebar
         currentTab={currentTab}
@@ -146,13 +160,15 @@ export default function App() {
         avgSpeed={avgSpeed}
         setAvgSpeed={setAvgSpeed}
         setIsFleetConfigOpen={setIsFleetConfigOpen}
+        isMobileNavOpen={isMobileNavOpen}
+        onCloseMobileNav={() => setIsMobileNavOpen(false)}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 h-full overflow-y-auto">
         {isComparing ? (
           <div className="h-full flex flex-col items-center justify-center">
-            <Loader2 className="w-12 h-12 text-[#1E3A8A] animate-spin mb-4" />
+            <Loader2 className="w-12 h-12 text-fleet-navy animate-spin mb-4" />
             <h2 className="text-xl font-bold text-slate-700">Running All Algorithms...</h2>
             <p className="text-slate-500 mt-2">Running 6 variants in parallel.</p>
           </div>
@@ -161,7 +177,7 @@ export default function App() {
             <div className="w-24 h-24 bg-slate-200 rounded-full flex items-center justify-center mb-6">
               <AlertCircle className="w-12 h-12 text-slate-400" />
             </div>
-            <h1 className="text-3xl font-bold text-[#1E3A8A] mb-4">Welcome to RouteWay Intelligence</h1>
+            <h1 className="text-3xl font-bold text-fleet-navy mb-4">Welcome to RouteWay Intelligence</h1>
             <p className="text-lg text-slate-600 max-w-xl mx-auto">
               Please upload your vehicle manifest (.csv) using the sidebar to begin optimization. <br/><br/>
               The system requires no hardcoded data and relies entirely on your dynamic input for accurate routing, utilization metrics, and carbon tracking.
@@ -235,7 +251,7 @@ export default function App() {
       {isParamsModalOpen && (
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
           <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-slide-up">
-            <div className="bg-[#1E3A8A] text-white p-6 relative">
+            <div className="bg-fleet-navy text-white p-6 relative">
               <h2 className="text-xl font-bold">Set Routing Parameters</h2>
               <p className="text-blue-100 text-sm mt-1">Please set your Fleet Speed and Departure Time before calculating.</p>
             </div>
@@ -248,7 +264,7 @@ export default function App() {
                   min="1"
                   value={avgSpeed}
                   onChange={(e) => setAvgSpeed(Number(e.target.value))}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-lg font-bold text-slate-800 focus:ring-2 focus:ring-[#1E3A8A] focus:outline-none"
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-lg font-bold text-slate-800 focus:ring-2 focus:ring-fleet-navy focus:outline-none"
                   placeholder="e.g. 50"
                 />
               </div>
@@ -259,7 +275,7 @@ export default function App() {
                   type="time"
                   value={departureTimeStr}
                   onChange={(e) => setDepartureTimeStr(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-lg font-bold text-slate-800 focus:ring-2 focus:ring-[#1E3A8A] focus:outline-none"
+                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-lg font-bold text-slate-800 focus:ring-2 focus:ring-fleet-navy focus:outline-none"
                   required
                 />
               </div>
@@ -279,7 +295,7 @@ export default function App() {
               <button
                 onClick={handleCompareAll}
                 disabled={!avgSpeed || avgSpeed <= 0 || !departureTimeStr}
-                className="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#10B981] text-white hover:bg-[#059669] transition-colors shadow-sm shadow-[#10B981]/30 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-5 py-2.5 rounded-lg text-sm font-bold bg-signal-green text-white hover:bg-signal-green-hover transition-colors shadow-sm shadow-signal-green/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 คำนวณเส้นทาง
               </button>

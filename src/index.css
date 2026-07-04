@@ -1,11 +1,36 @@
 @import "tailwindcss";
 @import "leaflet/dist/leaflet.css";
 
+@theme {
+  --color-fleet-navy: #1E3A8A;
+  --color-fleet-navy-hover: #1e40af;
+  --color-signal-green: #10B981;
+  --color-signal-green-hover: #059669;
+  --color-alert-red: #EF4444;
+  --color-amber-warning: #F59E0B;
+  --color-amber-warning-deep: #D97706;
+  --color-route-blue: #3B82F6;
+  --color-route-orange: #F97316;
+  --color-neutral-canvas: #F8FAFC;
+
+  --animate-fade-in: fade-in 0.2s ease-out;
+  --animate-slide-up: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
 :root {
-  --primary-navy: #1E3A8A;
-  --bg-slate: #F8FAFC;
-  --success-green: #10B981;
-  --danger-red: #EF4444;
+  --primary-navy: var(--color-fleet-navy);
+  --bg-slate: var(--color-neutral-canvas);
+  --success-green: var(--color-signal-green);
+  --danger-red: var(--color-alert-red);
 }
 
 body {

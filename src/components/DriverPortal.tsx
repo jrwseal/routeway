@@ -143,7 +143,7 @@ export default function DriverPortal({
     <div className="p-8 pb-20 animate-fade-in w-full max-w-7xl mx-auto flex flex-col h-[calc(100vh-2rem)]">
       <div className="mb-6 flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-[#1E3A8A] mb-2">RouteWay</h1>
+          <h1 className="text-3xl font-bold text-fleet-navy mb-2">RouteWay</h1>
           <p className="text-lg font-medium text-slate-600">
             Interactive Driver Portal
           </p>
@@ -157,7 +157,7 @@ export default function DriverPortal({
             <select
               value={selectedRouteIndex}
               onChange={handleRouteSelect}
-              className="border border-slate-300 rounded px-3 py-2 text-sm bg-white font-medium text-[#1E3A8A] outline-none focus:ring-2 focus:ring-[#1E3A8A]"
+              className="border border-slate-300 rounded px-3 py-2 text-sm bg-white font-medium text-fleet-navy outline-none focus:ring-2 focus:ring-fleet-navy"
             >
               {data.routeSummaries.map((r) => (
                 <option key={r.routeIndex} value={r.routeIndex}>
@@ -174,12 +174,12 @@ export default function DriverPortal({
       </div>
 
       {isCompleted ? (
-        <Card className="bg-[#F0FDF4] border-[#10B981] shadow-md flex-shrink-0">
+        <Card className="bg-[#F0FDF4] border-signal-green shadow-md flex-shrink-0">
           <CardContent className="flex flex-col items-center justify-center p-12 text-center">
-            <div className="w-20 h-20 bg-[#10B981] bg-opacity-20 rounded-full flex items-center justify-center mb-6">
-              <PackageCheck className="w-10 h-10 text-[#10B981]" />
+            <div className="w-20 h-20 bg-signal-green bg-opacity-20 rounded-full flex items-center justify-center mb-6">
+              <PackageCheck className="w-10 h-10 text-signal-green" />
             </div>
-            <h2 className="text-3xl font-bold text-[#1E3A8A] mb-2">
+            <h2 className="text-3xl font-bold text-fleet-navy mb-2">
               🎉 Tour Completed Successfully
             </h2>
             <p className="text-slate-600 text-lg">
@@ -188,7 +188,7 @@ export default function DriverPortal({
             </p>
             <button
               onClick={() => setCurrentStep(0)}
-              className="mt-6 bg-[#1E3A8A] hover:bg-blue-800 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all active:scale-[0.98] flex items-center justify-center cursor-pointer"
+              className="mt-6 bg-fleet-navy hover:bg-blue-800 text-white font-bold py-3 px-6 rounded-lg shadow-md transition-all active:scale-[0.98] flex items-center justify-center cursor-pointer"
             >
               <span className="mr-2">🔄</span> Reset and Restart New Tour
             </button>
@@ -198,7 +198,7 @@ export default function DriverPortal({
         <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
           {/* Active Navigation Panel */}
           <div className="w-full lg:w-1/3 flex flex-col gap-6 flex-shrink-0 overflow-y-auto pr-2">
-            <Card className="border-l-4 border-l-[#1E3A8A] shadow-md">
+            <Card className="border border-fleet-navy shadow-md">
               <CardHeader className="pb-2 bg-slate-50 border-b">
                 <CardTitle className="text-xs uppercase tracking-wider text-slate-500 font-semibold flex items-center">
                   <Navigation className="w-4 h-4 mr-2" />
@@ -217,7 +217,7 @@ export default function DriverPortal({
                       <p className="text-sm font-medium text-slate-500">
                         Est. Arrival Time
                       </p>
-                      <p className="text-lg font-semibold text-[#1E3A8A]">
+                      <p className="text-lg font-semibold text-fleet-navy">
                         {activeLeg?.arrivalDate
                           ? format(activeLeg.arrivalDate, "HH:mm")
                           : "N/A"}
@@ -235,7 +235,7 @@ export default function DriverPortal({
                         <p
                           className={`text-md font-semibold ${
                             activeLeg.status === "Delayed"
-                              ? "text-[#EF4444]"
+                              ? "text-alert-red"
                               : "text-slate-700"
                           }`}
                         >
@@ -264,7 +264,7 @@ export default function DriverPortal({
                   <div className="text-slate-600 font-medium">
                     Leg Distance:
                   </div>
-                  <div className="font-bold text-[#1E3A8A]">
+                  <div className="font-bold text-fleet-navy">
                     {activeLeg?.distanceKm.toFixed(1)} km
                   </div>
                 </div>
@@ -275,7 +275,7 @@ export default function DriverPortal({
                       href={`https://www.google.com/maps/dir/?api=1&destination=${activeLeg.toNode.lat},${activeLeg.toNode.lon}&travelmode=driving`}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="w-full bg-slate-100 hover:bg-slate-200 text-[#1E3A8A] font-bold py-3 px-4 rounded-lg shadow-sm transition-all active:scale-[0.98] flex items-center justify-center border border-slate-300"
+                      className="w-full bg-slate-100 hover:bg-slate-200 text-fleet-navy font-bold py-3 px-4 rounded-lg shadow-sm transition-all active:scale-[0.98] flex items-center justify-center border border-slate-300"
                     >
                       <MapPin className="w-5 h-5 mr-2" />
                       นำทาง
@@ -285,7 +285,7 @@ export default function DriverPortal({
                   {stepState === "pending" ? (
                     <button
                       onClick={() => setStepState("in_transit")}
-                      className="w-full bg-[#F59E0B] hover:bg-[#D97706] text-white font-bold py-4 px-4 rounded-lg shadow-md transition-all active:scale-[0.98] flex items-center justify-center"
+                      className="w-full bg-amber-warning hover:bg-amber-warning-deep text-white font-bold py-4 px-4 rounded-lg shadow-md transition-all active:scale-[0.98] flex items-center justify-center"
                     >
                       <Navigation className="w-5 h-5 mr-2" />
                       กำลังไปส่ง
@@ -293,7 +293,7 @@ export default function DriverPortal({
                   ) : (
                     <button
                       onClick={handleNextStep}
-                      className="w-full bg-[#10B981] hover:bg-[#059669] text-white font-bold py-4 px-4 rounded-lg shadow-md transition-all active:scale-[0.98] flex items-center justify-center"
+                      className="w-full bg-signal-green hover:bg-signal-green-hover text-white font-bold py-4 px-4 rounded-lg shadow-md transition-all active:scale-[0.98] flex items-center justify-center"
                     >
                       <PackageCheck className="w-5 h-5 mr-2" />
                       ส่งเสร็จแล้ว
@@ -305,7 +305,7 @@ export default function DriverPortal({
 
             <Card className="flex-1 min-h-[300px] flex flex-col">
               <CardHeader className="py-4 border-b">
-                <CardTitle className="text-md font-bold text-[#1E3A8A]">
+                <CardTitle className="text-md font-bold text-fleet-navy">
                   Sequenced Manifest Activity
                 </CardTitle>
               </CardHeader>
@@ -328,7 +328,7 @@ export default function DriverPortal({
                       >
                         <div className="flex justify-between items-start mb-1">
                           <span
-                            className={`font-bold text-sm ${isActive ? "text-[#1E3A8A]" : "text-slate-700"}`}
+                            className={`font-bold text-sm ${isActive ? "text-fleet-navy" : "text-slate-700"}`}
                           >
                             {index + 1}. {leg.toNode.location}
                           </span>
@@ -340,7 +340,7 @@ export default function DriverPortal({
                               ✅ ส่งเสร็จแล้ว
                             </span>
                           ) : isActive && stepState === "in_transit" ? (
-                            <span className="text-xs bg-[#FEF3C7] px-2 py-0.5 rounded flex items-center text-[#D97706] font-bold">
+                            <span className="text-xs bg-[#FEF3C7] px-2 py-0.5 rounded flex items-center text-amber-warning-deep font-bold">
                               🚚 กำลังไปส่ง
                             </span>
                           ) : null}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { RouteNode, ProcessedData } from '../types';
-import { Truck, Navigation, Leaf, UploadCloud, Info, BarChart } from 'lucide-react';
+import { Truck, Navigation, Leaf, UploadCloud, Info, BarChart, X } from 'lucide-react';
 import Papa from 'papaparse';
 import { parse } from 'date-fns';
 
@@ -14,11 +14,13 @@ interface SidebarProps {
   avgSpeed: number;
   setAvgSpeed: (val: number) => void;
   setIsFleetConfigOpen: (isOpen: boolean) => void;
+  isMobileNavOpen: boolean;
+  onCloseMobileNav: () => void;
 }
 
 export default function Sidebar({
   currentTab, setCurrentTab, onDataLoaded, isProcessing, hasData, hasComparison,
-  avgSpeed, setAvgSpeed, setIsFleetConfigOpen
+  avgSpeed, setAvgSpeed, setIsFleetConfigOpen, isMobileNavOpen, onCloseMobileNav
 }: SidebarProps) {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,11 +98,35 @@ export default function Sidebar({
   ];
 
   return (
-    <div className="w-80 h-full bg-[#F8FAFC] border-r border-slate-200 flex flex-col pt-6 overflow-y-auto">
-      <div className="px-6 mb-8">
-        <h1 className="text-2xl font-bold text-[#1E3A8A]">RouteWay</h1>
-        <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mt-1">Logistics Intelligence</p>
-      </div>
+    <>
+      {/* Mobile backdrop */}
+      {isMobileNavOpen && (
+        <div
+          className="fixed inset-0 bg-slate-900/50 z-30 lg:hidden"
+          onClick={onCloseMobileNav}
+          aria-hidden="true"
+        />
+      )}
+
+      <div
+        className={`fixed inset-y-0 left-0 z-40 w-80 h-full bg-neutral-canvas border-r border-slate-200 flex flex-col pt-6 overflow-y-auto transform transition-transform duration-300 ease-out
+          lg:static lg:translate-x-0
+          ${isMobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      >
+        <div className="px-6 mb-8 flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-fleet-navy">RouteWay</h1>
+            <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mt-1">Logistics Intelligence</p>
+          </div>
+          <button
+            type="button"
+            onClick={onCloseMobileNav}
+            aria-label="Close navigation menu"
+            className="lg:hidden p-2 -mr-2 text-slate-500 hover:text-slate-700"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
 
       <div className="px-6 mb-8 flex flex-col gap-4">
         <button 
@@ -113,7 +139,7 @@ export default function Sidebar({
           *หมายเหตุ: หากไม่ได้ทำการตั้งค่ากองรถ ระบบจะคำนวณโดยอิงตามค่ามาตรฐาน (Standard Pool) ของระบบโดยอัตโนมัติ
         </p>
 
-        <label className="text-sm font-semibold text-[#1E3A8A]">Vehicle Manifest (CSV)</label>
+        <label className="text-sm font-semibold text-fleet-navy">Vehicle Manifest (CSV)</label>
         <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:bg-slate-50 transition-colors cursor-pointer relative">
           <UploadCloud className="w-6 h-6 mx-auto mb-2 text-slate-400" />
           <span className="text-xs text-slate-500">Upload Manifest (.csv)</span>
@@ -136,10 +162,10 @@ export default function Sidebar({
           <button
             key={item.id}
             disabled={item.id === 'comparison' ? !hasComparison : !hasData}
-            onClick={() => setCurrentTab(item.id)}
+            onClick={() => { setCurrentTab(item.id); onCloseMobileNav(); }}
             className={`flex items-center px-4 py-3 rounded-md text-sm font-medium transition-colors ${
               currentTab === item.id 
-                ? 'bg-[#1E3A8A] text-white' 
+                ? 'bg-fleet-navy text-white' 
                 : 'text-slate-600 hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed'
             }`}
           >
@@ -148,6 +174,7 @@ export default function Sidebar({
           </button>
         ))}
       </nav>
-    </div>
+      </div>
+    </>
   );
 }

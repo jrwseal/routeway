@@ -31,13 +31,13 @@ export default function AlgorithmComparison({ data, onSelectVariant }: Props) {
 
   return (
     <div className="p-6">
-      <h2 className="text-2xl font-bold text-[#1E3A8A] mb-1">Algorithm Comparison</h2>
+      <h2 className="text-2xl font-bold text-fleet-navy mb-1">Algorithm Comparison</h2>
       <p className="text-sm text-slate-500 mb-6">Green cell = best value per metric. Detail views use the lowest-cost result. Time window compliance (Due_Time) is guaranteed with Clarke-Wright Savings and Or-opt + SA.</p>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
         <table className="w-full text-sm border-collapse">
           <thead>
-            <tr className="bg-[#1E3A8A] text-white">
+            <tr className="bg-fleet-navy text-white">
               <th className="px-4 py-3 text-left font-semibold">Algorithm</th>
               <th className="px-4 py-3 text-left font-semibold">2-opt</th>
               <th className="px-4 py-3 text-right font-semibold">Distance (km)</th>
@@ -58,7 +58,7 @@ export default function AlgorithmComparison({ data, onSelectVariant }: Props) {
                 <td className={`px-4 py-3 text-right rounded ${colClass(i, bestDist)}`}>
                   {row.milkRunDistance.toFixed(1)}
                 </td>
-                <td className={`px-4 py-3 text-right ${vsSavingsPct(row.milkRunDistance) > 0 ? 'text-emerald-700' : vsSavingsPct(row.milkRunDistance) < 0 ? 'text-red-600' : 'text-slate-400'}`}>
+                <td className={`px-4 py-3 text-right ${vsSavingsPct(row.milkRunDistance) > 0 ? 'text-emerald-700' : vsSavingsPct(row.milkRunDistance) < 0 ? 'text-red-600' : 'text-slate-600'}`}>
                   {row === savingsBaseline
                     ? 'baseline'
                     : `${vsSavingsPct(row.milkRunDistance) > 0 ? '+' : ''}${vsSavingsPct(row.milkRunDistance).toFixed(1)}%`}
@@ -75,7 +75,7 @@ export default function AlgorithmComparison({ data, onSelectVariant }: Props) {
                 <td className="px-4 py-3 text-center">
                   <button
                     onClick={() => onSelectVariant(i)}
-                    className="px-3 py-1 text-xs font-bold rounded-lg bg-[#1E3A8A] text-white hover:bg-blue-800 transition-colors"
+                    className="px-3 py-1 text-xs font-bold rounded-lg bg-fleet-navy text-white hover:bg-blue-800 transition-colors"
                   >
                     View
                   </button>

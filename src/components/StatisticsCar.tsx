@@ -18,7 +18,7 @@ export default function StatisticsCar({ data, savingsBaseline }: StatisticsCarPr
   return (
     <div className="p-8 h-full overflow-y-auto animate-fade-in bg-slate-50">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#1E3A8A] mb-2 flex items-center">
+        <h1 className="text-3xl font-bold text-fleet-navy mb-2 flex items-center">
           <BarChart className="w-8 h-8 mr-3" />
           Statistics Car
         </h1>
@@ -27,7 +27,7 @@ export default function StatisticsCar({ data, savingsBaseline }: StatisticsCarPr
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         {/* SECTION B: Environmental Comparison */}
-        <Card className="shadow-md border-0 lg:col-span-2 bg-gradient-to-br from-blue-900 to-[#1E3A8A] text-white">
+        <Card className="shadow-md border-0 lg:col-span-2 bg-fleet-navy text-white">
           <CardHeader>
             <CardTitle className="text-white flex items-center text-xl">
               <Leaf className="w-6 h-6 mr-2" />
@@ -35,20 +35,20 @@ export default function StatisticsCar({ data, savingsBaseline }: StatisticsCarPr
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
-              <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm border border-white/20">
-                <p className="text-blue-200 font-medium mb-1">Total Distance Saved{savingsBaseline ? ' (vs Savings)' : ''}</p>
-                <p className="text-3xl font-bold">{(baselineDistance - data.milkRunDistance).toFixed(2)} km</p>
+            <div className="divide-y divide-white/15">
+              <div className="flex justify-between items-baseline py-3">
+                <span className="text-blue-200 font-medium">Total Distance Saved{savingsBaseline ? ' (vs Savings)' : ''}</span>
+                <span className="text-2xl font-bold">{(baselineDistance - data.milkRunDistance).toFixed(2)} km</span>
               </div>
-              <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm border border-white/20">
-                <p className="text-blue-200 font-medium mb-1">Total Carbon Reduced{savingsBaseline ? ' (vs Savings)' : ''}</p>
-                <p className="text-3xl font-bold">{(baselineCO2 - data.milkRunCO2).toFixed(2)} kg CO₂</p>
+              <div className="flex justify-between items-baseline py-3">
+                <span className="text-blue-200 font-medium">Total Carbon Reduced{savingsBaseline ? ' (vs Savings)' : ''}</span>
+                <span className="text-2xl font-bold">{(baselineCO2 - data.milkRunCO2).toFixed(2)} kg CO₂</span>
               </div>
-              <div className="bg-white/10 rounded-xl p-6 backdrop-blur-sm border border-white/20">
-                <p className="text-blue-200 font-medium mb-1">Reduction Percentage</p>
-                <p className={`text-4xl font-black ${co2ReductionPct >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+              <div className="flex justify-between items-baseline py-3">
+                <span className="text-blue-200 font-medium">Reduction Percentage</span>
+                <span className={`text-2xl font-bold ${co2ReductionPct >= 0 ? 'text-emerald-300' : 'text-red-300'}`}>
                   {co2ReductionPct.toFixed(1)}%
-                </p>
+                </span>
               </div>
             </div>
           </CardContent>
@@ -57,7 +57,7 @@ export default function StatisticsCar({ data, savingsBaseline }: StatisticsCarPr
         {/* SECTION A: Individual Truck Breakdown */}
         <Card className="shadow-md border-0 lg:col-span-2">
           <CardHeader>
-            <CardTitle className="text-[#1E3A8A] flex items-center text-xl">
+            <CardTitle className="text-fleet-navy flex items-center text-xl">
               <Truck className="w-6 h-6 mr-2" />
               สถิติรายคัน (Individual Truck Breakdown)
             </CardTitle>
@@ -72,7 +72,7 @@ export default function StatisticsCar({ data, savingsBaseline }: StatisticsCarPr
                 return (
                   <div key={idx} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm hover:shadow-md transition-shadow">
                     <div className="flex justify-between items-center mb-4 pb-3 border-b border-slate-100">
-                      <h3 className="font-bold text-lg text-[#1E3A8A]">Route {route.routeIndex}</h3>
+                      <h3 className="font-bold text-lg text-fleet-navy">Route {route.routeIndex}</h3>
                       <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-semibold rounded-full text-center">
                         {route.vehicle.name}
                       </span>

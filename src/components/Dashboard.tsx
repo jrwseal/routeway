@@ -19,7 +19,7 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
   return (
     <div className="p-8 pb-20 animate-fade-in w-full max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#1E3A8A] mb-2">RouteWay</h1>
+        <h1 className="text-3xl font-bold text-fleet-navy mb-2">RouteWay</h1>
         <p className="text-lg font-medium text-slate-600">
           Dashboard & Savings Overview
         </p>
@@ -35,7 +35,7 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#1E3A8A]">
+            <div className="text-3xl font-bold text-fleet-navy">
               {data.nodes.length - 1}
             </div>
           </CardContent>
@@ -61,7 +61,7 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-[#1E3A8A]">
+            <div className="text-3xl font-bold text-fleet-navy">
               {data.milkRunDistance.toFixed(1)}
             </div>
           </CardContent>
@@ -74,7 +74,7 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-3xl font-bold ${distanceSavingsPct >= 0 ? 'text-[#10B981]' : 'text-red-600'}`}>
+            <div className={`text-3xl font-bold ${distanceSavingsPct >= 0 ? 'text-signal-green' : 'text-red-600'}`}>
               {distanceSavingsPct > 0 ? '+' : ''}{distanceSavingsPct.toFixed(1)}%
             </div>
           </CardContent>
@@ -84,7 +84,7 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg font-bold text-[#1E3A8A]">
+            <CardTitle className="text-lg font-bold text-fleet-navy">
               Capacity & Utilization
             </CardTitle>
           </CardHeader>
@@ -93,13 +93,13 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
               <div>
                 <div className="flex justify-between text-sm font-medium mb-1">
                   <span>Truck Capacity/Pallet Utilization</span>
-                  <span className="text-[#1E3A8A] font-bold">
+                  <span className="text-fleet-navy font-bold">
                     {data.spaceUtilization.toFixed(1)}%
                   </span>
                 </div>
                 <div className="w-full bg-slate-200 rounded-full h-2.5">
                   <div
-                    className="bg-[#1E3A8A] h-2.5 rounded-full"
+                    className="bg-fleet-navy h-2.5 rounded-full"
                     style={{
                       width: `${Math.min(data.spaceUtilization, 100)}%`,
                     }}
@@ -131,21 +131,21 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg font-bold text-[#1E3A8A]">
+            <CardTitle className="text-lg font-bold text-fleet-navy">
               Logistics Insights
             </CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-3 text-sm text-slate-600">
               <li className="flex items-start">
-                <span className="mr-2 text-[#1E3A8A]">●</span>
+                <span className="mr-2 text-fleet-navy">●</span>
                 <span>
                   จำนวนรถที่ใช้ (Total Active Trucks):{" "}
                   <strong>{data.totalTrucksUsed} คัน</strong>
                 </span>
               </li>
               <li className="flex items-start">
-                <span className="mr-2 text-[#10B981]">●</span>
+                <span className="mr-2 text-signal-green">●</span>
                 <span>
                   Optimized Milk Run routing saves{" "}
                   <strong>{data.fuelSavedLiters.toFixed(2)} liters</strong> of
@@ -153,7 +153,7 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
                 </span>
               </li>
               <li className="flex items-start">
-                <span className="mr-2 text-[#1E3A8A]">●</span>
+                <span className="mr-2 text-fleet-navy">●</span>
                 <span>
                   The journey targets{" "}
                   <strong>{data.nodes.length - 1} customer drops</strong>{" "}
@@ -161,7 +161,7 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
                 </span>
               </li>
               <li className="flex items-start">
-                <span className="mr-2 text-[#1E3A8A]">●</span>
+                <span className="mr-2 text-fleet-navy">●</span>
                 <span>
                   Total Fleet Waiting Hours:{" "}
                   <strong>{data.totalWaitingHours.toFixed(2)} hours</strong>{" "}
@@ -169,7 +169,7 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
                 </span>
               </li>
               <li className="flex items-start">
-                <span className="mr-2 text-[#1E3A8A]">●</span>
+                <span className="mr-2 text-fleet-navy">●</span>
                 <span>
                   Capacity utilization is at{" "}
                   <strong>{data.spaceUtilization.toFixed(1)}%</strong>. Consider
@@ -179,7 +179,7 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
             </ul>
 
             <div className="mt-6">
-              <h4 className="font-semibold text-sm text-[#1E3A8A] mb-2">
+              <h4 className="font-semibold text-sm text-fleet-navy mb-2">
                 Volume Utilization per Truck
               </h4>
               <div className="space-y-2">

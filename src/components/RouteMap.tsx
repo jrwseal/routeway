@@ -124,18 +124,21 @@ export default function RouteMap({ data, onViewAlgorithm }: { data: ProcessedDat
 
       {/* Floating Filter Menu */}
       <div className="absolute top-4 right-4 z-[1000] bg-white rounded-lg shadow-lg border border-slate-200 w-72 overflow-hidden">
-        <div 
-          className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center cursor-pointer hover:bg-slate-100"
+        <button
+          type="button"
+          aria-expanded={isFilterOpen}
+          aria-controls="route-filter-list"
+          className="w-full bg-slate-50 px-4 py-3 border-b border-slate-200 flex justify-between items-center hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-fleet-navy focus:ring-inset"
           onClick={() => setIsFilterOpen(!isFilterOpen)}
         >
-          <div className="flex items-center font-bold text-[#1E3A8A] text-sm">
+          <div className="flex items-center font-bold text-fleet-navy text-sm">
             <Layers className="w-4 h-4 mr-2" />
             Route Filter ({activeRouteIndices.length}/{data.routeSummaries.length})
           </div>
-        </div>
+        </button>
         
         {isFilterOpen && (
-          <div className="p-3 max-h-64 overflow-y-auto space-y-2">
+          <div id="route-filter-list" className="p-3 max-h-64 overflow-y-auto space-y-2">
             {data.routeSummaries.map(summary => {
               const isActive = activeRouteIndices.includes(summary.routeIndex);
               return (
@@ -144,7 +147,7 @@ export default function RouteMap({ data, onViewAlgorithm }: { data: ProcessedDat
                     type="checkbox"
                     checked={isActive}
                     onChange={() => toggleRoute(summary.routeIndex)}
-                    className="w-4 h-4 text-[#1E3A8A] rounded border-slate-300 focus:ring-[#1E3A8A]"
+                    className="w-4 h-4 text-fleet-navy rounded border-slate-300 focus:ring-fleet-navy"
                   />
                   <div className="flex-1 text-sm font-medium text-slate-700 truncate">
                     {summary.vehicle.name}
@@ -161,7 +164,7 @@ export default function RouteMap({ data, onViewAlgorithm }: { data: ProcessedDat
       {onViewAlgorithm && (
         <button
           onClick={onViewAlgorithm}
-          className="absolute bottom-4 left-4 z-[1000] bg-white rounded-lg shadow-lg border border-slate-200 px-4 py-2.5 flex items-center font-bold text-[#1E3A8A] text-sm hover:bg-slate-50 transition-colors"
+          className="absolute bottom-4 left-4 z-[1000] bg-white rounded-lg shadow-lg border border-slate-200 px-4 py-2.5 flex items-center font-bold text-fleet-navy text-sm hover:bg-slate-50 transition-colors"
         >
           <BarChart3 className="w-4 h-4 mr-2" />
           View Algorithm

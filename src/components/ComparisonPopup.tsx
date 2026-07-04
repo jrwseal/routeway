@@ -29,7 +29,7 @@ export default function ComparisonPopup({ data, onClose, onSelectVariant }: Prop
       >
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition-colors"
+          className="absolute top-2 right-2 p-2 text-slate-400 hover:text-slate-600 transition-colors"
           aria-label="Close"
         >
           <X className="w-6 h-6" />

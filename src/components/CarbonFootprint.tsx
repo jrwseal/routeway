@@ -52,7 +52,7 @@ export default function CarbonFootprint({ data, savingsBaseline, comparisonData 
   return (
     <div className="p-8 pb-20 animate-fade-in w-full max-w-7xl mx-auto">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-[#1E3A8A] mb-2">RouteWay</h1>
+        <h1 className="text-3xl font-bold text-fleet-navy mb-2">RouteWay</h1>
         <p className="text-lg font-medium text-slate-600">Carbon Footprint Reduction</p>
       </div>
 
@@ -62,7 +62,7 @@ export default function CarbonFootprint({ data, savingsBaseline, comparisonData 
             <CardTitle className="text-sm font-medium text-slate-500">Total Carbon Reduction</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-4xl font-bold ${co2ReductionPct >= 0 ? 'text-[#10B981]' : 'text-red-600'}`}>{co2ReductionPct.toFixed(1)}%</div>
+            <div className={`text-4xl font-bold ${co2ReductionPct >= 0 ? 'text-signal-green' : 'text-red-600'}`}>{co2ReductionPct.toFixed(1)}%</div>
             <p className="text-sm text-slate-500 mt-2">
               {savingsBaseline ? 'Reduction in CO₂ emissions vs Clarke-Wright Savings' : 'Reduction in CO₂ emissions compared to traditional methods'}
             </p>
@@ -74,7 +74,7 @@ export default function CarbonFootprint({ data, savingsBaseline, comparisonData 
             <CardTitle className="text-sm font-medium text-slate-500">Fuel Liters Saved</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className={`text-4xl font-bold ${fuelSaved >= 0 ? 'text-[#1E3A8A]' : 'text-red-600'}`}>{fuelSaved.toFixed(1)} L</div>
+            <div className={`text-4xl font-bold ${fuelSaved >= 0 ? 'text-fleet-navy' : 'text-red-600'}`}>{fuelSaved.toFixed(1)} L</div>
             <p className="text-sm text-slate-500 mt-2">Saved per complete manifest tour</p>
           </CardContent>
         </Card>
@@ -82,7 +82,7 @@ export default function CarbonFootprint({ data, savingsBaseline, comparisonData 
 
       <Card className="mb-8 hidden sm:block">
         <CardHeader>
-          <CardTitle className="text-lg font-bold text-[#1E3A8A]">CO₂ Emissions Comparison (kg)</CardTitle>
+          <CardTitle className="text-lg font-bold text-fleet-navy">CO₂ Emissions Comparison (kg)</CardTitle>
           {comparisonData && comparisonData.length > 0 && (
             <p className="text-xs text-slate-500">
               <span className="inline-block w-2.5 h-2.5 rounded-sm mr-1 align-middle" style={{ backgroundColor: BEST_COLOR }} />Best (lowest CO₂)
@@ -117,7 +117,7 @@ export default function CarbonFootprint({ data, savingsBaseline, comparisonData 
       
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-bold text-[#1E3A8A]">Methodology</CardTitle>
+          <CardTitle className="text-lg font-bold text-fleet-navy">Methodology</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-sm text-slate-600 leading-relaxed">
