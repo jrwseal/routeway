@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ProcessedData, RouteSummary, RouteLeg } from '../types';
 import { MapContainer, TileLayer, Polyline, useMap, Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
-import { Layers } from 'lucide-react';
+import { Layers, BarChart3 } from 'lucide-react';
 
 function MapController({ legs, activeRouteIndices }: { legs: RouteLeg[], activeRouteIndices: number[] }) {
   const map = useMap();
@@ -29,7 +29,7 @@ function MapController({ legs, activeRouteIndices }: { legs: RouteLeg[], activeR
   return null;
 }
 
-export default function RouteMap({ data }: { data: ProcessedData }) {
+export default function RouteMap({ data, onViewAlgorithm }: { data: ProcessedData; onViewAlgorithm?: () => void }) {
   const allRoutes = data.routeSummaries.map(r => r.routeIndex);
   const [activeRouteIndices, setActiveRouteIndices] = useState<number[]>(allRoutes);
   const [isFilterOpen, setIsFilterOpen] = useState(true);
@@ -156,6 +156,17 @@ export default function RouteMap({ data }: { data: ProcessedData }) {
           </div>
         )}
       </div>
+
+      {/* View Algorithm Button */}
+      {onViewAlgorithm && (
+        <button
+          onClick={onViewAlgorithm}
+          className="absolute bottom-4 left-4 z-[1000] bg-white rounded-lg shadow-lg border border-slate-200 px-4 py-2.5 flex items-center font-bold text-[#1E3A8A] text-sm hover:bg-slate-50 transition-colors"
+        >
+          <BarChart3 className="w-4 h-4 mr-2" />
+          View Algorithm
+        </button>
+      )}
     </div>
   );
 }

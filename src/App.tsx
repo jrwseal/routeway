@@ -166,7 +166,13 @@ export default function App() {
           </div>
         ) : (
           <>
-            {currentTab === 'dashboard' && <Dashboard data={processedData} savingsBaseline={savingsBaseline} />}
+            {currentTab === 'dashboard' && (
+              <Dashboard
+                data={processedData}
+                savingsBaseline={savingsBaseline}
+                onViewAlgorithm={comparisonData ? () => setIsComparisonModalOpen(true) : undefined}
+              />
+            )}
             {currentTab === 'statistics' && <StatisticsCar data={processedData} savingsBaseline={savingsBaseline} />}
             {currentTab === 'driver' && (
               <DriverPortal

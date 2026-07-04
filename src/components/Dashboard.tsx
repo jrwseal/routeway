@@ -6,9 +6,10 @@ import RouteMap from "./RouteMap";
 interface DashboardProps {
   data: ProcessedData;
   savingsBaseline?: ProcessedData | null;
+  onViewAlgorithm?: () => void;
 }
 
-export default function Dashboard({ data, savingsBaseline }: DashboardProps) {
+export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: DashboardProps) {
   const baselineDistance = savingsBaseline ? savingsBaseline.milkRunDistance : data.traditionalDistance;
   const isSavingsBaseline = !!savingsBaseline;
   const distanceSavingsPct = baselineDistance > 0
@@ -24,7 +25,7 @@ export default function Dashboard({ data, savingsBaseline }: DashboardProps) {
         </p>
       </div>
 
-      <RouteMap data={data} />
+      <RouteMap data={data} onViewAlgorithm={onViewAlgorithm} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-8">
         <Card>
