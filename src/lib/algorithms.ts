@@ -276,3 +276,94 @@ export function orOptAnnealing(nodes: RouteNode[], params: ProcessingParams): nu
 
   return bestRoutes.map(r => twoOptFeasible(r, nodes, params));
 }
+
+export function solomonI1(nodes: RouteNode[], params: ProcessingParams): number[][] {
+  const depot = nodes[0];
+  const unrouted = new Set<number>();
+  for (let i = 1; i < nodes.length; i++) unrouted.add(i);
+
+  const routes: number[][] = [];
+
+  const distToDepot = (idx: number) =>
+    getFallbackDist([depot.lon, depot.lat], [nodes[idx].lon, nodes[idx].lat]);
+
+  const distBetween = (a: number, b: number) => {
+    const na = a === 0 ? depot : nodes[a];
+    const nb = b === 0 ? depot : nodes[b];
+    return getFallbackDist([na.lon, na.lat], [nb.lon, nb.lat]);
+  };
+
+  function seedNewRoute(): boolean {
+    if (unrouted.size === 0) return false;
+    // Find the unrouted customer farthest from the depot; tie-break by lowest index
+    const candidates: { idx: number; d: number }[] = [];
+    for (let idx = 1; idx < nodes.length; idx++) {
+      if (!unrouted.has(idx)) continue;
+      candidates.push({ idx, d: distToDepot(idx) });
+    }
+    if (candidates.length === 0) return false;
+    // Sort by distance descending, then by index ascending (for tie-breaking)
+    candidates.sort((a, b) => b.d - a.d || a.idx - b.idx);
+    const seed = candidates[0].idx;
+    routes.push([seed]);
+    unrouted.delete(seed);
+    return true;
+  }
+
+  function bestInsertion(route: number[], u: number): { pos: number; cost: number } | null {
+    let bestPos = -1;
+    let bestCost = Infinity;
+    // Start from position 1 if route is non-empty to preserve the seed at position 0
+    const startPos = route.length > 0 ? 1 : 0;
+    for (let pos = startPos; pos <= route.length; pos++) {
+      const i = pos === 0 ? 0 : route[pos - 1];
+      const j = pos === route.length ? 0 : route[pos];
+      const c1 = distBetween(i, u) + distBetween(u, j) - distBetween(i, j);
+      const candidate = [...route.slice(0, pos), u, ...route.slice(pos)];
+      if (checkRouteFeasible(candidate, nodes, params) && c1 < bestCost) {
+        bestCost = c1;
+        bestPos = pos;
+      }
+    }
+    return bestPos === -1 ? null : { pos: bestPos, cost: bestCost };
+  }
+
+  seedNewRoute();
+
+  while (unrouted.size > 0) {
+    let chosenCustomer = -1;
+    let chosenRouteIdx = -1;
+    let chosenPos = -1;
+    let bestRegret = -Infinity;
+
+    for (const u of unrouted) {
+      let bestForU: { routeIdx: number; pos: number; cost: number } | null = null;
+      for (let r = 0; r < routes.length; r++) {
+        const insertion = bestInsertion(routes[r], u);
+        if (insertion && (!bestForU || insertion.cost < bestForU.cost)) {
+          bestForU = { routeIdx: r, pos: insertion.pos, cost: insertion.cost };
+        }
+      }
+      if (bestForU) {
+        const regret = distToDepot(u) - bestForU.cost;
+        if (regret > bestRegret) {
+          bestRegret = regret;
+          chosenCustomer = u;
+          chosenRouteIdx = bestForU.routeIdx;
+          chosenPos = bestForU.pos;
+        }
+      }
+    }
+
+    if (chosenCustomer === -1) {
+      if (!seedNewRoute()) break;
+      continue;
+    }
+
+    const route = routes[chosenRouteIdx];
+    routes[chosenRouteIdx] = [...route.slice(0, chosenPos), chosenCustomer, ...route.slice(chosenPos)];
+    unrouted.delete(chosenCustomer);
+  }
+
+  return routes;
+}

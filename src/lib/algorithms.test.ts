@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { nearestNeighbor, sweep, twoOpt, checkRouteFeasible, orOptAnnealing, clarkWrightSavings, twoOptFeasible } from './algorithms';
+import { nearestNeighbor, sweep, twoOpt, checkRouteFeasible, orOptAnnealing, clarkWrightSavings, twoOptFeasible, solomonI1 } from './algorithms';
 import { getFallbackDist } from './geo';
 import type { RouteNode, ProcessingParams } from '../types';
 
@@ -212,5 +212,63 @@ describe('orOptAnnealing', () => {
     // Prove the guard used by orOptAnnealing's final cleanup pass falls back
     // to the pre-2-opt route instead of returning the infeasible one.
     expect(twoOptFeasible(original, crossNodes, baseParams)).toEqual(original);
+  });
+});
+
+describe('solomonI1', () => {
+  it('covers all customer nodes exactly once', () => {
+    const routes = solomonI1(nodes, baseParams);
+    const allIdx = routes.flat().sort((a, b) => a - b);
+    expect(allIdx).toEqual([1, 2, 3, 4]);
+  });
+
+  it('no route exceeds max capacity', () => {
+    const routes = solomonI1(nodes, baseParams);
+    for (const route of routes) {
+      const vol = route.reduce((s, i) => s + nodes[i].demandVolume, 0);
+      expect(vol).toBeLessThanOrEqual(20);
+    }
+  });
+
+  it('every route is time-window feasible', () => {
+    const routes = solomonI1(nodes, baseParams);
+    for (const route of routes) {
+      expect(checkRouteFeasible(route, nodes, baseParams)).toBe(true);
+    }
+  });
+
+  it('produces no worse total distance than one truck per customer', () => {
+    const routes = solomonI1(nodes, baseParams);
+    const dist = (r: number[]) => {
+      const full = [0, ...r, 0];
+      let d = 0;
+      for (let i = 0; i < full.length - 1; i++) {
+        const a = full[i] === 0 ? depot : nodes[full[i]];
+        const b = full[i + 1] === 0 ? depot : nodes[full[i + 1]];
+        d += getFallbackDist([a.lon, a.lat], [b.lon, b.lat]);
+      }
+      return d;
+    };
+    const solomonDist = routes.reduce((total, r) => total + dist(r), 0);
+
+    const perCustomerDist = [1, 2, 3, 4].reduce((total, idx) => {
+      const node = nodes[idx];
+      return total + 2 * getFallbackDist([depot.lon, depot.lat], [node.lon, node.lat]);
+    }, 0);
+
+    expect(solomonDist).toBeLessThanOrEqual(perCustomerDist + 0.001);
+  });
+
+  it('starts each new route with the customer farthest from the depot', () => {
+    // With the shared 4-node fixture (all within max capacity 20), everything
+    // fits in a single route, so the very first (and only) route's first
+    // customer must be the farthest one from the depot.
+    const routes = solomonI1(nodes, baseParams);
+    const farthest = [1, 2, 3, 4].reduce((bi, i) => {
+      const di = getFallbackDist([depot.lon, depot.lat], [nodes[i].lon, nodes[i].lat]);
+      const db = getFallbackDist([depot.lon, depot.lat], [nodes[bi].lon, nodes[bi].lat]);
+      return di > db ? i : bi;
+    }, 1);
+    expect(routes[0][0]).toBe(farthest);
   });
 });
