@@ -6,6 +6,7 @@ import CarbonFootprint from './components/CarbonFootprint';
 import DriverPortal from './components/DriverPortal';
 import StatisticsCar from './components/StatisticsCar';
 import AlgorithmComparison from './components/AlgorithmComparison';
+import ComparisonPopup from './components/ComparisonPopup';
 import { processData, DEFAULT_FLEET_POOL } from './lib/geo';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import FleetConfigModal from './components/FleetConfigModal';
@@ -29,6 +30,7 @@ export default function App() {
   const [departureTimeStr, setDepartureTimeStr] = useState("08:00");
 
   const [comparisonData, setComparisonData] = useState<ComparisonResult[] | null>(null);
+  const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
   const [variantResults, setVariantResults] = useState<ProcessedData[]>([]);
   const [savingsBaseline, setSavingsBaseline] = useState<ProcessedData | null>(null);
   const [isComparing, setIsComparing] = useState(false);
@@ -123,7 +125,8 @@ export default function App() {
     setSavingsBaseline(savingsIdx >= 0 ? variantData[savingsIdx] : null);
 
     setComparisonData(comparison);
-    setCurrentTab('comparison');
+    setCurrentTab('dashboard');
+    setIsComparisonModalOpen(true);
     setIsComparing(false);
   };
 
@@ -187,6 +190,19 @@ export default function App() {
           </>
         )}
       </main>
+
+      {/* Algorithm Comparison Popup */}
+      {isComparisonModalOpen && comparisonData && (
+        <ComparisonPopup
+          data={comparisonData}
+          onClose={() => setIsComparisonModalOpen(false)}
+          onSelectVariant={(idx) => {
+            setProcessedData(variantResults[idx]);
+            setCurrentTab('dashboard');
+            setIsComparisonModalOpen(false);
+          }}
+        />
+      )}
 
       {/* Fleet Config Modal */}
       <FleetConfigModal
