@@ -1,22 +1,40 @@
 import React from 'react';
-import type { ComparisonResult } from '../types';
+import type { ComparisonResult, OptimizationCriterion } from '../types';
 
 interface Props {
   data: ComparisonResult[];
   onSelectVariant: (idx: number) => void;
+  optimizationCriterion: OptimizationCriterion;
 }
 
 function bestIdx(data: ComparisonResult[], key: keyof Pick<ComparisonResult, 'milkRunDistance' | 'milkRunCost' | 'milkRunCO2' | 'totalTrucksUsed'>): number {
   return data.reduce((bi, c, i) => (c[key] < data[bi][key] ? i : bi), 0);
 }
 
-export default function AlgorithmComparison({ data, onSelectVariant }: Props) {
+const CRITERION_LABEL: Record<OptimizationCriterion, string> = {
+  cost: 'Min Cost',
+  co2: 'Min CO2',
+  distance: 'Min Distance',
+};
+
+export default function AlgorithmComparison({ data, onSelectVariant, optimizationCriterion }: Props) {
   if (data.length === 0) return null;
 
   const bestDist = bestIdx(data, 'milkRunDistance');
   const bestCost = bestIdx(data, 'milkRunCost');
   const bestCO2 = bestIdx(data, 'milkRunCO2');
   const bestTrucks = bestIdx(data, 'totalTrucksUsed');
+
+  const bestByCriterion =
+    optimizationCriterion === 'co2' ? bestCO2 :
+    optimizationCriterion === 'distance' ? bestDist :
+    bestCost;
+  const winner = data[bestByCriterion];
+  const winnerValue =
+    optimizationCriterion === 'co2' ? `${winner.milkRunCO2.toFixed(1)} kg CO₂` :
+    optimizationCriterion === 'distance' ? `${winner.milkRunDistance.toFixed(1)} km` :
+    `฿${winner.milkRunCost.toLocaleString('th-TH', { maximumFractionDigits: 0 })}`;
+  const winnerLabel = `${winner.algorithm}${winner.algorithm === 'Or-opt + SA' ? '' : winner.twoOpt ? ' (2-opt)' : ''}`;
 
   const savingsBaseline = data.find((r) => r.algorithm === 'Clarke-Wright' && !r.twoOpt) ?? data[0];
   const vsSavingsPct = (dist: number) =>
@@ -32,7 +50,14 @@ export default function AlgorithmComparison({ data, onSelectVariant }: Props) {
   return (
     <div className="p-6">
       <h2 className="text-2xl font-bold text-fleet-navy mb-1">Algorithm Comparison</h2>
-      <p className="text-sm text-slate-500 mb-6">Green cell = best value per metric. Detail views use the lowest-cost result. Time window compliance (Due_Time) is guaranteed with Clarke-Wright Savings and Or-opt + SA.</p>
+      <p className="text-sm text-slate-500 mb-4">Green cell = best value per metric. Detail views use the {CRITERION_LABEL[optimizationCriterion].toLowerCase()} result. Time window compliance (Due_Time) is guaranteed with Clarke-Wright Savings and Or-opt + SA.</p>
+
+      <div className="mb-6 bg-signal-green/10 border border-signal-green/30 rounded-lg px-4 py-3 flex items-center gap-2">
+        <span className="text-lg" aria-hidden="true">🏆</span>
+        <span className="text-sm text-slate-700">
+          Best by {CRITERION_LABEL[optimizationCriterion]}: <strong className="text-slate-900">{winnerLabel}</strong> — <strong className="text-slate-900">{winnerValue}</strong>
+        </span>
+      </div>
 
       <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm">
         <table className="w-full text-sm border-collapse">

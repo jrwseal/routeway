@@ -1,15 +1,16 @@
 import React, { useEffect } from 'react';
 import { X } from 'lucide-react';
-import type { ComparisonResult } from '../types';
+import type { ComparisonResult, OptimizationCriterion } from '../types';
 import AlgorithmComparison from './AlgorithmComparison';
 
 interface Props {
   data: ComparisonResult[];
   onClose: () => void;
   onSelectVariant: (idx: number) => void;
+  optimizationCriterion: OptimizationCriterion;
 }
 
-export default function ComparisonPopup({ data, onClose, onSelectVariant }: Props) {
+export default function ComparisonPopup({ data, onClose, onSelectVariant, optimizationCriterion }: Props) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -34,7 +35,7 @@ export default function ComparisonPopup({ data, onClose, onSelectVariant }: Prop
         >
           <X className="w-6 h-6" />
         </button>
-        <AlgorithmComparison data={data} onSelectVariant={onSelectVariant} />
+        <AlgorithmComparison data={data} onSelectVariant={onSelectVariant} optimizationCriterion={optimizationCriterion} />
       </div>
     </div>
   );

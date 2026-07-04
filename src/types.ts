@@ -42,6 +42,8 @@ export interface RouteSummary {
   vehicle: Vehicle;
 }
 
+export type OptimizationCriterion = 'cost' | 'co2' | 'distance';
+
 export interface ProcessingParams {
   fleetPool: Vehicle[];
   avgSpeed: number;

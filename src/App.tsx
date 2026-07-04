@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { RouteNode, ProcessedData, ComparisonResult } from './types';
+import { RouteNode, ProcessedData, ComparisonResult, OptimizationCriterion } from './types';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import CarbonFootprint from './components/CarbonFootprint';
@@ -29,6 +29,7 @@ export default function App() {
   const [pendingNodes, setPendingNodes] = useState<RouteNode[] | null>(null);
   const [isParamsModalOpen, setIsParamsModalOpen] = useState(false);
   const [departureTimeStr, setDepartureTimeStr] = useState("08:00");
+  const [optimizationCriterion, setOptimizationCriterion] = useState<OptimizationCriterion>('cost');
 
   const [comparisonData, setComparisonData] = useState<ComparisonResult[] | null>(null);
   const [isComparisonModalOpen, setIsComparisonModalOpen] = useState(false);
@@ -118,9 +119,10 @@ export default function App() {
       }
     });
 
-    // Auto-select best result (lowest cost) for detail views
+    // Auto-select best result for detail views, per the chosen optimization criterion
     if (variantData.length > 0) {
-      const bestIdx = comparison.reduce((bi, c, i) => c.milkRunCost < comparison[bi].milkRunCost ? i : bi, 0);
+      const metricKey = optimizationCriterion === 'co2' ? 'milkRunCO2' : optimizationCriterion === 'distance' ? 'milkRunDistance' : 'milkRunCost';
+      const bestIdx = comparison.reduce((bi, c, i) => c[metricKey] < comparison[bi][metricKey] ? i : bi, 0);
       setProcessedData(variantData[bestIdx]);
     }
     setVariantResults(variantData);
@@ -206,6 +208,7 @@ export default function App() {
             {currentTab === 'comparison' && comparisonData && (
               <AlgorithmComparison
                 data={comparisonData}
+                optimizationCriterion={optimizationCriterion}
                 onSelectVariant={(idx) => {
                   setProcessedData(variantResults[idx]);
                   setCurrentTab('dashboard');
@@ -220,6 +223,7 @@ export default function App() {
       {isComparisonModalOpen && comparisonData && (
         <ComparisonPopup
           data={comparisonData}
+          optimizationCriterion={optimizationCriterion}
           onClose={() => setIsComparisonModalOpen(false)}
           onSelectVariant={(idx) => {
             setProcessedData(variantResults[idx]);
@@ -278,6 +282,36 @@ export default function App() {
                   className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-lg font-bold text-slate-800 focus:ring-2 focus:ring-fleet-navy focus:outline-none"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="text-sm font-semibold text-slate-700 block mb-2">Optimize For</label>
+                <div className="flex gap-2">
+                  {([
+                    { value: 'cost', label: 'Min Cost' },
+                    { value: 'co2', label: 'Min CO2' },
+                    { value: 'distance', label: 'Min Distance' },
+                  ] as { value: OptimizationCriterion; label: string }[]).map(({ value, label }) => (
+                    <label
+                      key={value}
+                      className={`flex-1 text-center cursor-pointer rounded-lg border px-3 py-2 text-sm font-bold transition-colors ${
+                        optimizationCriterion === value
+                          ? 'bg-fleet-navy text-white border-fleet-navy'
+                          : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="optimizationCriterion"
+                        value={value}
+                        checked={optimizationCriterion === value}
+                        onChange={() => setOptimizationCriterion(value)}
+                        className="sr-only"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
               </div>
 
             </div>
