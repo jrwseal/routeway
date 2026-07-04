@@ -50,7 +50,7 @@ export interface ProcessingParams {
   fuelPrice4W: number;
   fuelPrice6W: number;
   fuelPrice10W: number;
-  algorithm: 'savings' | 'nearest-neighbor' | 'sweep' | 'or-opt-sa';
+  algorithm: 'savings' | 'nearest-neighbor' | 'sweep' | 'or-opt-sa' | 'solomon-i1';
   applyTwoOpt: boolean;
 }
 

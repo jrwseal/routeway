@@ -7,7 +7,7 @@ import {
   RouteSummary,
 } from "../types";
 import { addSeconds, isAfter, isBefore } from "date-fns";
-import { clarkWrightSavings, nearestNeighbor, sweep, twoOpt, orOptAnnealing } from './algorithms';
+import { clarkWrightSavings, nearestNeighbor, sweep, twoOpt, orOptAnnealing, solomonI1 } from './algorithms';
 
 function deg2rad(deg: number) {
   return deg * (Math.PI / 180);
@@ -223,6 +223,7 @@ export async function processData(
       case 'nearest-neighbor': return nearestNeighbor(nodes, params);
       case 'sweep': return sweep(nodes, params);
       case 'or-opt-sa': return orOptAnnealing(nodes, params);
+      case 'solomon-i1': return solomonI1(nodes, params);
       default: return clarkWrightSavings(nodes, params);
     }
   }
