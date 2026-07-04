@@ -20,7 +20,7 @@ export default function ComparisonPopup({ data, onClose, onSelectVariant }: Prop
 
   return (
     <div
-      className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in"
+      className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 animate-fade-in"
       onClick={onClose}
     >
       <div
