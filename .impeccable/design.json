@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-07-04T00:00:00Z",
+  "title": "Design System: RouteWay Intelligence",
+  "extensions": {
+    "colorMeta": {
+      "fleet-navy": {
+        "role": "primary",
+        "displayName": "Fleet Navy",
+        "canonical": "oklch(35% 0.13 260)",
+        "tonalRamp": ["#0a1530", "#111d47", "#16295e", "#1E3A8A", "#2b4ba3", "#4a68c0", "#7f97d8", "#c3cfef"]
+      },
+      "signal-green": {
+        "role": "secondary",
+        "displayName": "Signal Green",
+        "canonical": "oklch(69% 0.15 162)",
+        "tonalRamp": ["#053626", "#065f46", "#047857", "#059669", "#10B981", "#34d399", "#6ee7b7", "#d1fae5"]
+      },
+      "alert-red": {
+        "role": "tertiary",
+        "displayName": "Alert Red",
+        "canonical": "oklch(63% 0.21 25)",
+        "tonalRamp": ["#450a0a", "#7f1d1d", "#991b1b", "#dc2626", "#EF4444", "#f87171", "#fca5a5", "#fee2e2"]
+      },
+      "amber-warning": {
+        "role": "tertiary",
+        "displayName": "Amber Warning",
+        "canonical": "oklch(76% 0.16 70)",
+        "tonalRamp": ["#451a03", "#78350f", "#92400e", "#D97706", "#F59E0B", "#fbbf24", "#fcd34d", "#FEF3C7"]
+      },
+      "route-blue": {
+        "role": "categorical",
+        "displayName": "Route Blue",
+        "canonical": "oklch(62% 0.19 260)",
+        "tonalRamp": ["#0f2050", "#1e3a8a", "#1d4ed8", "#2563eb", "#3B82F6", "#60a5fa", "#93c5fd", "#dbeafe"]
+      },
+      "route-orange": {
+        "role": "categorical",
+        "displayName": "Route Orange",
+        "canonical": "oklch(70% 0.17 45)",
+        "tonalRamp": ["#431407", "#7c2d12", "#9a3412", "#c2410c", "#F97316", "#fb923c", "#fdba74", "#ffedd5"]
+      },
+      "neutral-canvas": {
+        "role": "neutral",
+        "displayName": "Neutral Canvas",
+        "canonical": "oklch(98% 0.005 260)",
+        "tonalRamp": ["#0f172a", "#1e293b", "#334155", "#64748b", "#94A3B8", "#cbd5e1", "#e2e8f0", "#F8FAFC"]
+      }
+    },
+    "typographyMeta": {
+      "headline": { "displayName": "Headline", "purpose": "Page-level titles, brand wordmark." },
+      "title": { "displayName": "Title", "purpose": "Modal headers, card section titles." },
+      "body": { "displayName": "Body", "purpose": "Default UI copy, table cells, KPI values." },
+      "label": { "displayName": "Label", "purpose": "Column headers, form labels, status badges." }
+    },
+    "shadows": [
+      { "name": "resting", "value": "0 1px 2px rgba(0,0,0,0.05)", "purpose": "Default for cards and table containers, the vast majority of the UI." },
+      { "name": "floating", "value": "0 4px 6px rgba(0,0,0,0.1)", "purpose": "Above-flow but non-modal elements: map's Route Filter panel, View Algorithm button." },
+      { "name": "overlay", "value": "0 20px 25px rgba(0,0,0,0.15)", "purpose": "True modals and popups: Fleet Config, routing params, Algorithm Comparison popup." }
+    ],
+    "motion": [
+      { "name": "ease-standard", "value": "cubic-bezier(0.4, 0, 0.2, 1)", "purpose": "Default transition easing for hover/color state changes across buttons and nav items." }
+    ],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Main calculation/confirm CTA, e.g. คำนวณเส้นทาง.",
+      "html": "<button class=\"ds-btn-primary\">คำนวณเส้นทาง</button>",
+      "css": ".ds-btn-primary { background: #1E3A8A; color: #ffffff; padding: 10px 20px; border-radius: 8px; font-weight: 700; font-size: 0.875rem; border: none; transition: background 0.2s cubic-bezier(0.4,0,0.2,1); } .ds-btn-primary:hover { background: #1e40af; } .ds-btn-primary:focus-visible { outline: 2px solid #1E3A8A; outline-offset: 2px; }"
+    },
+    {
+      "name": "Success Button",
+      "kind": "button",
+      "refersTo": "button-success",
+      "description": "Explicit save/apply action, e.g. Fleet Config's save button.",
+      "html": "<button class=\"ds-btn-success\">💾 บันทึกและใช้งานกองรถนี้</button>",
+      "css": ".ds-btn-success { background: #10B981; color: #ffffff; padding: 10px 24px; border-radius: 8px; font-weight: 700; font-size: 0.875rem; border: none; transition: background 0.2s cubic-bezier(0.4,0,0.2,1); } .ds-btn-success:hover { background: #059669; } .ds-btn-success:focus-visible { outline: 2px solid #10B981; outline-offset: 2px; }"
+    },
+    {
+      "name": "Ghost Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Cancel/reset secondary action.",
+      "html": "<button class=\"ds-btn-ghost\">🔄 ใช้ค่ามาตรฐาน (Standard)</button>",
+      "css": ".ds-btn-ghost { background: #e2e8f0; color: #334155; padding: 8px 16px; border-radius: 6px; font-weight: 700; font-size: 0.875rem; border: none; transition: background 0.2s cubic-bezier(0.4,0,0.2,1); } .ds-btn-ghost:hover { background: #cbd5e1; }"
+    },
+    {
+      "name": "Comparison Table Cell (best value)",
+      "kind": "custom",
+      "refersTo": "table-cell-best",
+      "description": "The single strongest visual signal in the app: green tint marking the winning value in a comparison column.",
+      "html": "<td class=\"ds-cell-best\">208.0</td>",
+      "css": ".ds-cell-best { background: #d1fae5; color: #065f46; font-weight: 700; padding: 12px 16px; text-align: right; border-radius: 4px; }"
+    },
+    {
+      "name": "Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "Standard KPI/content container, resting elevation.",
+      "html": "<div class=\"ds-card\"><h3 class=\"ds-card-title\">Total Stops</h3><div class=\"ds-card-value\">17</div></div>",
+      "css": ".ds-card { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,0.05); padding: 24px; } .ds-card-title { font-size: 0.875rem; font-weight: 600; color: #64748b; margin: 0 0 8px 0; } .ds-card-value { font-size: 1.875rem; font-weight: 700; color: #1E3A8A; }"
+    },
+    {
+      "name": "Input Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Standard text/number field, e.g. Fleet Config's capacity/fuel inputs.",
+      "html": "<input class=\"ds-input\" type=\"number\" placeholder=\"e.g. 50\" />",
+      "css": ".ds-input { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px 16px; font-size: 0.875rem; background: #ffffff; color: #1e293b; } .ds-input:focus { outline: none; border-color: #1E3A8A; box-shadow: 0 0 0 2px rgba(30,58,138,0.3); }"
+    },
+    {
+      "name": "Nav Item (active)",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Sidebar navigation, active/selected state.",
+      "html": "<button class=\"ds-nav-item ds-nav-item--active\"><span>📊</span> Algorithm Comparison</button>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 16px; border-radius: 8px; font-size: 0.875rem; font-weight: 600; border: none; background: transparent; color: #334155; transition: background 0.2s; } .ds-nav-item:hover { background: #f1f5f9; } .ds-nav-item--active { background: #1E3A8A; color: #ffffff; }"
+    },
+    {
+      "name": "Overlay Modal Shell",
+      "kind": "custom",
+      "refersTo": "modal-shell",
+      "description": "Backdrop + panel shell shared by Fleet Config, routing params, and Algorithm Comparison popup.",
+      "html": "<div class=\"ds-modal-backdrop\"><div class=\"ds-modal-panel\"><h2 class=\"ds-modal-title\">Set Routing Parameters</h2></div></div>",
+      "css": ".ds-modal-backdrop { position: fixed; inset: 0; background: rgba(15,23,42,0.5); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; } .ds-modal-panel { background: #ffffff; border-radius: 16px; box-shadow: 0 20px 25px rgba(0,0,0,0.15); padding: 24px; max-width: 32rem; width: 100%; } .ds-modal-title { font-size: 1.5rem; font-weight: 700; color: #1E3A8A; margin: 0; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Dispatch Console",
+    "overview": "RouteWay Intelligence reads like the console a dispatcher trusts to plan a real fleet's day: dense with numbers that must be scannable and citable, never decorative for its own sake. The system is built around one dominant fleet navy that carries structure and authority, a single signal green reserved for 'this is the best number on the row' and confirmed actions, and a flat, bordered surface language that keeps 8-9 rows of algorithm comparison legible at a glance rather than fighting the eye with gradients or glass. This explicitly rejects generic SaaS-dashboard tropes: no gradient text, no hero-metric-with-gradient-accent cards, no identical icon-heading-text card grids repeated for their own sake, no glassmorphism as decoration.",
+    "keyCharacteristics": [
+      "One dominant brand color (Fleet Navy) carrying headings, primary actions, and active nav state",
+      "Signal green is earned, not default — it marks the winning value in a comparison, not 'primary' branding",
+      "Flat cards with hairline borders and shadow-sm at rest; elevation increases only for things that float above the page",
+      "Data density over whitespace-for-its-own-sake — this is a working tool, not a marketing surface"
+    ],
+    "rules": [
+      { "name": "The Earned Green Rule", "body": "Signal green is never a default accent color. It appears only where it marks a specific winning value, a successful save, or an on-time status.", "section": "colors" },
+      { "name": "The Categorical-Never-Semantic Rule", "body": "Route Blue and Route Orange identify a truck's route on the map and must never be reinterpreted as info/warning colors elsewhere.", "section": "colors" },
+      { "name": "The Scan-First Rule", "body": "Every number that feeds a business decision must be at Body weight or heavier and never below 0.875rem.", "section": "typography" },
+      { "name": "The Elevation-Equals-Z-Index Rule", "body": "A component's shadow weight must match its z-index tier: resting for in-flow content, floating for above-flow controls, overlay for true modals/popups.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do reserve Signal Green exclusively for winning value, on-time, or confirmed save",
+      "Do match shadow tier to z-index tier",
+      "Do keep every cost/CO2/distance number at Body weight or larger",
+      "Do use borders, not shadows, to separate adjacent cards in dense layouts",
+      "Do use rounded-lg (8px) as the default corner radius"
+    ],
+    "donts": [
+      "Don't use gradient text or gradient-accented hero metric cards",
+      "Don't build identical icon+heading+text card grids as a default layout pattern",
+      "Don't use glassmorphism decoratively",
+      "Don't reuse Route Blue or Route Orange as semantic info/warning colors",
+      "Don't reach for a modal as the first instinct for new features",
+      "Don't encode delivery status with color alone"
+    ]
+  }
+}
