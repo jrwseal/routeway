@@ -253,14 +253,14 @@ export default function App() {
 
       {/* Params Setup Modal */}
       {isParamsModalOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center animate-fade-in">
-          <div className="bg-white w-full max-w-md rounded-2xl shadow-xl overflow-hidden animate-slide-up">
-            <div className="bg-fleet-navy text-white p-6 relative">
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white w-full max-w-md max-h-[90vh] overflow-y-auto rounded-2xl shadow-xl animate-slide-up">
+            <div className="bg-fleet-navy text-white p-4 sm:p-6 relative">
               <h2 className="text-xl font-bold">Set Routing Parameters</h2>
               <p className="text-blue-100 text-sm mt-1">Please set your Fleet Speed and Departure Time before calculating.</p>
             </div>
 
-            <div className="p-6 space-y-6">
+            <div className="p-4 sm:p-6 space-y-6">
               <div>
                 <label className="text-sm font-semibold text-slate-700 block mb-2">Average Speed (km/h)</label>
                 <input
@@ -316,7 +316,7 @@ export default function App() {
 
             </div>
 
-            <div className="p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
+            <div className="p-4 sm:p-6 bg-slate-50 border-t border-slate-100 flex justify-end gap-3">
               <button
                 onClick={() => {
                   setIsParamsModalOpen(false);

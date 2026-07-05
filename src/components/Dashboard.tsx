@@ -17,7 +17,7 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
     : 0;
 
   return (
-    <div className="p-8 pb-20 animate-fade-in w-full max-w-7xl mx-auto">
+    <div className="p-4 sm:p-8 pb-20 animate-fade-in w-full max-w-7xl mx-auto">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-fleet-navy mb-2">RouteWay</h1>
         <p className="text-lg font-medium text-slate-600">

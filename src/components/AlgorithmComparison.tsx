@@ -48,7 +48,7 @@ export default function AlgorithmComparison({ data, onSelectVariant, optimizatio
       : 'text-slate-700';
 
   return (
-    <div className="p-6">
+    <div className="p-4 sm:p-6">
       <h2 className="text-2xl font-bold text-fleet-navy mb-1">Algorithm Comparison</h2>
       <p className="text-sm text-slate-500 mb-4">Green cell = best value per metric. Detail views use the {CRITERION_LABEL[optimizationCriterion].toLowerCase()} result. Time window compliance (Due_Time) is guaranteed with Clarke-Wright Savings and Or-opt + SA.</p>
 

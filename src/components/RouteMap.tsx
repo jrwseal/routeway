@@ -32,7 +32,7 @@ function MapController({ legs, activeRouteIndices }: { legs: RouteLeg[], activeR
 export default function RouteMap({ data, onViewAlgorithm }: { data: ProcessedData; onViewAlgorithm?: () => void }) {
   const allRoutes = data.routeSummaries.map(r => r.routeIndex);
   const [activeRouteIndices, setActiveRouteIndices] = useState<number[]>(allRoutes);
-  const [isFilterOpen, setIsFilterOpen] = useState(true);
+  const [isFilterOpen, setIsFilterOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
 
   // Sync if data changes
   useEffect(() => {
@@ -75,7 +75,7 @@ export default function RouteMap({ data, onViewAlgorithm }: { data: ProcessedDat
   const customerIcon = createPinIcon('#ef4444', 28);
 
   return (
-    <div className="relative w-full h-[500px] border border-slate-300 rounded-lg overflow-hidden shadow-md mt-6">
+    <div className="relative w-full h-[350px] sm:h-[500px] border border-slate-300 rounded-lg overflow-hidden shadow-md mt-6">
       <MapContainer 
         center={[depot.lat, depot.lon]} 
         zoom={12} 
@@ -123,7 +123,7 @@ export default function RouteMap({ data, onViewAlgorithm }: { data: ProcessedDat
       </MapContainer>
 
       {/* Floating Filter Menu */}
-      <div className="absolute top-4 right-4 z-[1000] bg-white rounded-lg shadow-lg border border-slate-200 w-72 overflow-hidden">
+      <div className="absolute top-2 right-2 sm:top-4 sm:right-4 z-[1000] bg-white rounded-lg shadow-lg border border-slate-200 w-56 sm:w-72 max-w-[calc(100%-1rem)] overflow-hidden">
         <button
           type="button"
           aria-expanded={isFilterOpen}
@@ -164,7 +164,7 @@ export default function RouteMap({ data, onViewAlgorithm }: { data: ProcessedDat
       {onViewAlgorithm && (
         <button
           onClick={onViewAlgorithm}
-          className="absolute bottom-4 left-4 z-[1000] bg-white rounded-lg shadow-lg border border-slate-200 px-4 py-2.5 flex items-center font-bold text-fleet-navy text-sm hover:bg-slate-50 transition-colors"
+          className="absolute bottom-2 left-2 sm:bottom-4 sm:left-4 z-[1000] bg-white rounded-lg shadow-lg border border-slate-200 px-3 py-2 sm:px-4 sm:py-2.5 flex items-center font-bold text-fleet-navy text-xs sm:text-sm hover:bg-slate-50 transition-colors"
         >
           <BarChart3 className="w-4 h-4 mr-2" />
           View Algorithm

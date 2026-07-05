@@ -16,7 +16,7 @@ export default function StatisticsCar({ data, savingsBaseline }: StatisticsCarPr
     : 0;
 
   return (
-    <div className="p-8 h-full overflow-y-auto animate-fade-in bg-slate-50">
+    <div className="p-4 sm:p-8 h-full overflow-y-auto animate-fade-in bg-slate-50">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-fleet-navy mb-2 flex items-center">
           <BarChart className="w-8 h-8 mr-3" />

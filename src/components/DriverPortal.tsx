@@ -140,7 +140,7 @@ export default function DriverPortal({
   };
 
   return (
-    <div className="p-8 pb-20 animate-fade-in w-full max-w-7xl mx-auto flex flex-col h-[calc(100vh-2rem)]">
+    <div className="p-4 sm:p-8 pb-20 animate-fade-in w-full max-w-7xl mx-auto flex flex-col lg:h-[calc(100vh-2rem)]">
       <div className="mb-6 flex-shrink-0 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-fleet-navy mb-2">RouteWay</h1>
@@ -360,7 +360,7 @@ export default function DriverPortal({
           </div>
 
           {/* Map Portal */}
-          <div className="w-full lg:w-2/3 h-[500px] lg:h-auto border border-slate-300 rounded-lg overflow-hidden shadow-md flex-shrink-0 relative">
+          <div className="w-full lg:w-2/3 h-[350px] sm:h-[500px] lg:h-auto border border-slate-300 rounded-lg overflow-hidden shadow-md flex-shrink-0 relative">
             {activeLeg && (
               <MapContainer
                 center={[activeLeg.fromNode.lat, activeLeg.fromNode.lon]}
