@@ -1,4 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { createDb } from './db';
 import { verifyPassword } from './auth';
 
@@ -23,11 +26,18 @@ describe('createDb', () => {
     expect(row.count).toBe(9);
   });
 
-  it('does not reseed on a second call with an existing file', () => {
-    const db1 = createDb(':memory:');
-    db1.prepare('INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, ?, ?)')
-      .run('extra', 'hash', 'driver', 'Extra');
-    const count1 = (db1.prepare('SELECT COUNT(*) as count FROM users').get() as any).count;
-    expect(count1).toBe(2);
+  it('does not reseed on a second call against the same file', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'routeway-db-test-'));
+    const dbPath = join(dir, 'test.db');
+    try {
+      const db1 = createDb(dbPath);
+      db1.close();
+      const db2 = createDb(dbPath);
+      const count = (db2.prepare('SELECT COUNT(*) as count FROM users').get() as any).count;
+      expect(count).toBe(1);
+      db2.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 });

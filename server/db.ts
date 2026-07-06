@@ -1,8 +1,14 @@
 import { createRequire } from 'node:module';
+import type { DatabaseSync } from 'node:sqlite';
 import { hashPassword } from './auth';
 
-const require = createRequire(import.meta.url);
-const { DatabaseSync } = require('node:sqlite');
+// The bundled vite-node in this project's vitest version does not recognize
+// `node:sqlite` as a Node builtin (it is missing from Node's `builtinModules`
+// list as of Node 24), so a static ESM import fails to resolve under `vitest run`.
+// `import type` above is erased at compile time (never seen by vite-node's
+// runtime resolver); `createRequire` fetches the actual value via Node's own
+// CJS resolution, bypassing the broken ESM resolution entirely.
+const sqlite = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
 
 const DEFAULT_VEHICLES = [
   { id: '4w-1', type: '4-wheel', name: 'รถบรรทุก 4 ล้อใหญ่ - คันที่ 1', capacityCBM: 12, fuelConsumption: 0.12, fixedCost: 300, color: '#10B981' },
@@ -17,7 +23,7 @@ const DEFAULT_VEHICLES = [
 ];
 
 export function createDb(path: string): DatabaseSync {
-  const db = new DatabaseSync(path);
+  const db = new sqlite.DatabaseSync(path);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS users (
