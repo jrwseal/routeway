@@ -19,6 +19,7 @@ export interface Vehicle {
   fuelConsumption: number;
   fixedCost: number;
   color: string;
+  driverUserId?: number | null;
 }
 
 export interface RouteLeg {

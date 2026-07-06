@@ -3,6 +3,7 @@ import cookieParser from 'cookie-parser';
 import type { DatabaseSync } from 'node:sqlite';
 import { authRouter } from './routes/auth';
 import { driversRouter } from './routes/drivers';
+import { fleetRouter } from './routes/fleet';
 
 export function createApp(db: DatabaseSync): Express {
   const app = express();
@@ -10,5 +11,6 @@ export function createApp(db: DatabaseSync): Express {
   app.use(cookieParser());
   app.use('/api/auth', authRouter(db));
   app.use('/api/drivers', driversRouter(db));
+  app.use('/api/fleet', fleetRouter(db));
   return app;
 }
