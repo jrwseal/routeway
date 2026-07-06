@@ -28,7 +28,7 @@ export function signToken(payload: JwtPayload): string {
 
 export function verifyToken(token: string): JwtPayload | null {
   try {
-    const payload = jwt.verify(token, JWT_SECRET) as JwtPayload & { iat: number; exp: number };
+    const payload = jwt.verify(token, JWT_SECRET) as unknown as JwtPayload & { iat: number; exp: number };
     return {
       sub: payload.sub,
       username: payload.username,
