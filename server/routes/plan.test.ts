@@ -70,6 +70,11 @@ describe('plan routes', () => {
     const res = await driverAgent.get('/api/plan/active');
     expect(res.body.plan.routeSummaries).toHaveLength(1);
     expect(res.body.plan.legs).toHaveLength(1);
+    expect(res.body.plan.nodes.map((n: any) => n.id).sort()).toEqual([0]);
+    expect(res.body.plan.milkRunCost).toBeUndefined();
+    expect(res.body.plan.traditionalCost).toBeUndefined();
+    expect(res.body.plan.savingsPercentage).toBeUndefined();
+    expect(res.body.plan.totalTrucksUsed).toBeUndefined();
 
     const otherRes = await agent.post('/api/drivers').send({ username: 'wichai', password: 'pass1234', displayName: 'วิชัย' });
     const otherAgent = request.agent(app);

@@ -84,10 +84,18 @@ export function planRouter(db: DatabaseSync): Router {
       return;
     }
 
+    const myLegs = plan.legs.filter((l: any) => myRouteIndexes.includes(l.routeIndex));
+    const myNodeIds = new Set<number>();
+    for (const leg of myLegs) {
+      myNodeIds.add(leg.fromNode.id);
+      myNodeIds.add(leg.toNode.id);
+    }
+
     res.json({
       plan: {
-        ...plan,
-        legs: plan.legs.filter((l: any) => myRouteIndexes.includes(l.routeIndex)),
+        optimizationCriterion: plan.optimizationCriterion,
+        nodes: plan.nodes.filter((n: any) => myNodeIds.has(n.id)),
+        legs: myLegs,
         routeSummaries: plan.routeSummaries.filter((s: any) => myRouteIndexes.includes(s.routeIndex)),
       },
     });
