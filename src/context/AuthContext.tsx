@@ -16,7 +16,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.getMe().then(setUser).finally(() => setLoading(false));
+    api.getMe().then(setUser).catch(() => setUser(null)).finally(() => setLoading(false));
   }, []);
 
   const login = async (username: string, password: string) => {
