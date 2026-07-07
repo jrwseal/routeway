@@ -100,6 +100,7 @@ export function nearestNeighbor(nodes: RouteNode[], params: ProcessingParams): n
       for (const idx of unvisited) {
         const vol = nodeVol(nodes[idx]);
         if (routeVolume + vol > maxCapacity) continue;
+        if (!checkRouteFeasible([...route, idx], nodes, params)) continue;
         const dist = getFallbackDist(
           [nodes[currentIdx].lon, nodes[currentIdx].lat],
           [nodes[idx].lon, nodes[idx].lat]
@@ -142,7 +143,9 @@ export function sweep(nodes: RouteNode[], params: ProcessingParams): number[][] 
 
   for (const { idx } of customers) {
     const vol = nodeVol(nodes[idx]);
-    if (routeVolume + vol > maxCapacity && route.length > 0) {
+    const wouldOverflow = routeVolume + vol > maxCapacity;
+    const wouldViolateWindow = !checkRouteFeasible([...route, idx], nodes, params);
+    if ((wouldOverflow || wouldViolateWindow) && route.length > 0) {
       routes.push(route);
       route = [];
       routeVolume = 0;

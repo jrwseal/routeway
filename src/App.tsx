@@ -119,10 +119,17 @@ export default function App() {
       }
     });
 
-    // Auto-select best result for detail views, per the chosen optimization criterion
+    // Auto-select best result for detail views, per the chosen optimization criterion,
+    // preferring fewer time-window violations before cost/CO2/distance.
+    const delayedCount = (d: ProcessedData) => d.legs.filter(l => l.status === 'Delayed').length;
     if (variantData.length > 0) {
       const metricKey = optimizationCriterion === 'co2' ? 'milkRunCO2' : optimizationCriterion === 'distance' ? 'milkRunDistance' : 'milkRunCost';
-      const bestIdx = comparison.reduce((bi, c, i) => c[metricKey] < comparison[bi][metricKey] ? i : bi, 0);
+      const bestIdx = comparison.reduce((bi, c, i) => {
+        const biDelayed = delayedCount(variantData[bi]);
+        const iDelayed = delayedCount(variantData[i]);
+        if (iDelayed !== biDelayed) return iDelayed < biDelayed ? i : bi;
+        return c[metricKey] < comparison[bi][metricKey] ? i : bi;
+      }, 0);
       setProcessedData(variantData[bestIdx]);
     }
     setVariantResults(variantData);
