@@ -117,6 +117,10 @@ export default function DriverPortal({
   const routeLegs = data.legs.filter(
     (leg) => leg.routeIndex === selectedRouteIndex,
   );
+  const routeWaitingMinutes = routeLegs.reduce(
+    (sum, leg) => sum + leg.waitingMinutes,
+    0,
+  );
 
   const isCompleted = currentStep >= routeLegs.length;
   const activeLeg = isCompleted ? null : routeLegs[currentStep];
@@ -304,10 +308,15 @@ export default function DriverPortal({
             </Card>
 
             <Card className="flex-1 min-h-[300px] flex flex-col">
-              <CardHeader className="py-4 border-b">
+              <CardHeader className="py-4 border-b flex flex-row items-center justify-between">
                 <CardTitle className="text-md font-bold text-fleet-navy">
                   Sequenced Manifest Activity
                 </CardTitle>
+                {routeWaitingMinutes > 0 && (
+                  <span className="text-xs font-bold text-amber-warning-deep bg-[#FEF3C7] px-2 py-1 rounded">
+                    ⏱ รอรวม {(routeWaitingMinutes / 60).toFixed(1)} ชม.
+                  </span>
+                )}
               </CardHeader>
               <div className="overflow-y-auto p-4 flex-1">
                 <div className="space-y-4">
@@ -350,6 +359,8 @@ export default function DriverPortal({
                           {leg.arrivalDate
                             ? format(leg.arrivalDate, "HH:mm")
                             : "N/A"}
+                          {Math.round(leg.waitingMinutes) > 0 &&
+                            ` • รอ ${Math.round(leg.waitingMinutes)} นาที`}
                         </div>
                       </div>
                     );
