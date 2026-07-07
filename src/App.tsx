@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { RouteNode, ProcessedData, ComparisonResult, OptimizationCriterion } from './types';
+import React, { useState, useEffect } from 'react';
+import { RouteNode, ProcessedData, ComparisonResult, OptimizationCriterion, Vehicle } from './types';
 import Sidebar from './components/Sidebar';
 import Dashboard from './components/Dashboard';
 import CarbonFootprint from './components/CarbonFootprint';
@@ -7,18 +7,45 @@ import DriverPortal from './components/DriverPortal';
 import StatisticsCar from './components/StatisticsCar';
 import AlgorithmComparison from './components/AlgorithmComparison';
 import ComparisonPopup from './components/ComparisonPopup';
-import { processData, DEFAULT_FLEET_POOL } from './lib/geo';
+import DriverManagement from './components/DriverManagement';
+import { processData } from './lib/geo';
+import { getFleet, saveActivePlan } from './lib/api';
 import { AlertCircle, Loader2, Menu } from 'lucide-react';
 import FleetConfigModal from './components/FleetConfigModal';
+import Login from './components/Login';
+import DriverOnlyShell from './components/DriverOnlyShell';
+import { useAuth } from './context/AuthContext';
 
 export default function App() {
+  const { user, loading, logout } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-neutral-canvas">
+        <Loader2 className="w-10 h-10 text-fleet-navy animate-spin" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login />;
+  }
+
+  if (user.role === 'driver') {
+    return <DriverOnlyShell displayName={user.displayName} onLogout={logout} />;
+  }
+
+  return <PlannerApp onLogout={logout} />;
+}
+
+function PlannerApp({ onLogout }: { onLogout: () => void }) {
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
   const [currentStep, setCurrentStep] = useState(0);
   const [stepState, setStepState] = useState<'pending' | 'in_transit'>('pending');
   // Configuration State
-  const [activeFleetPool, setActiveFleetPool] = useState([...DEFAULT_FLEET_POOL]);
+  const [activeFleetPool, setActiveFleetPool] = useState<Vehicle[]>([]);
   const [isFleetConfigOpen, setIsFleetConfigOpen] = useState(false);
   const [avgSpeed, setAvgSpeed] = useState(50);
   const [driverWaitingWage, setDriverWaitingWage] = useState(60);
@@ -36,6 +63,20 @@ export default function App() {
   const [variantResults, setVariantResults] = useState<ProcessedData[]>([]);
   const [savingsBaseline, setSavingsBaseline] = useState<ProcessedData | null>(null);
   const [isComparing, setIsComparing] = useState(false);
+
+  const loadFleetFromServer = () => {
+    getFleet().then(fleet => {
+      setActiveFleetPool(fleet.vehicles);
+      setDriverWaitingWage(fleet.driverWage);
+      setFuelPrice4W(fleet.fuelPrice4W);
+      setFuelPrice6W(fleet.fuelPrice6W);
+      setFuelPrice10W(fleet.fuelPrice10W);
+    });
+  };
+
+  useEffect(() => {
+    loadFleetFromServer();
+  }, []);
 
   const handleDataLoaded = (nodes: RouteNode[]) => {
     setComparisonData(null);
@@ -123,6 +164,7 @@ export default function App() {
     // Auto-select best result for detail views, per the chosen optimization criterion,
     // preferring fewer time-window violations before cost/CO2/distance.
     const delayedCount = (d: ProcessedData) => d.legs.filter(l => l.status === 'Delayed').length;
+    let bestData: ProcessedData | null = null;
     if (variantData.length > 0) {
       const metricKey = optimizationCriterion === 'co2' ? 'milkRunCO2' : optimizationCriterion === 'distance' ? 'milkRunDistance' : optimizationCriterion === 'waiting' ? 'milkRunWaitingHours' : 'milkRunCost';
       const bestIdx = comparison.reduce((bi, c, i) => {
@@ -131,7 +173,8 @@ export default function App() {
         if (iDelayed !== biDelayed) return iDelayed < biDelayed ? i : bi;
         return c[metricKey] < comparison[bi][metricKey] ? i : bi;
       }, 0);
-      setProcessedData(variantData[bestIdx]);
+      bestData = variantData[bestIdx];
+      setProcessedData(bestData);
     }
     setVariantResults(variantData);
 
@@ -142,6 +185,25 @@ export default function App() {
     setCurrentTab('dashboard');
     setIsComparisonModalOpen(true);
     setIsComparing(false);
+
+    if (bestData) {
+      try {
+        await saveActivePlan(optimizationCriterion, bestData);
+      } catch (err) {
+        console.error('Failed to save active plan:', err);
+        alert('บันทึกแผนเส้นทางไปยังเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่ หรือแจ้งผู้ดูแลระบบ');
+      }
+    }
+  };
+
+  const selectVariant = async (idx: number) => {
+    setProcessedData(variantResults[idx]);
+    try {
+      await saveActivePlan(optimizationCriterion, variantResults[idx]);
+    } catch (err) {
+      console.error('Failed to save active plan:', err);
+      alert('บันทึกแผนเส้นทางไปยังเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่ หรือแจ้งผู้ดูแลระบบ');
+    }
   };
 
   return (
@@ -172,11 +234,14 @@ export default function App() {
         setIsFleetConfigOpen={setIsFleetConfigOpen}
         isMobileNavOpen={isMobileNavOpen}
         onCloseMobileNav={() => setIsMobileNavOpen(false)}
+        onLogout={onLogout}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 h-full overflow-y-auto">
-        {isComparing ? (
+        {currentTab === 'drivers' ? (
+          <DriverManagement />
+        ) : isComparing ? (
           <div className="h-full flex flex-col items-center justify-center">
             <Loader2 className="w-12 h-12 text-fleet-navy animate-spin mb-4" />
             <h2 className="text-xl font-bold text-slate-700">Running All Algorithms...</h2>
@@ -218,7 +283,7 @@ export default function App() {
                 data={comparisonData}
                 optimizationCriterion={optimizationCriterion}
                 onSelectVariant={(idx) => {
-                  setProcessedData(variantResults[idx]);
+                  selectVariant(idx);
                   setCurrentTab('dashboard');
                 }}
               />
@@ -234,7 +299,7 @@ export default function App() {
           optimizationCriterion={optimizationCriterion}
           onClose={() => setIsComparisonModalOpen(false)}
           onSelectVariant={(idx) => {
-            setProcessedData(variantResults[idx]);
+            selectVariant(idx);
             setCurrentTab('dashboard');
             setIsComparisonModalOpen(false);
           }}
@@ -245,18 +310,7 @@ export default function App() {
       <FleetConfigModal
         isOpen={isFleetConfigOpen}
         onClose={() => setIsFleetConfigOpen(false)}
-        activeFleetPool={activeFleetPool}
-        initialDriverWage={driverWaitingWage}
-        initialFuelPrice4W={fuelPrice4W}
-        initialFuelPrice6W={fuelPrice6W}
-        initialFuelPrice10W={fuelPrice10W}
-        onSave={(newPool, newWage, fuel4W, fuel6W, fuel10W) => {
-          setActiveFleetPool(newPool);
-          setDriverWaitingWage(newWage);
-          setFuelPrice4W(fuel4W);
-          setFuelPrice6W(fuel6W);
-          setFuelPrice10W(fuel10W);
-        }}
+        onSaved={loadFleetFromServer}
       />
 
       {/* Params Setup Modal */}

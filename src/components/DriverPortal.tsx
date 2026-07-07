@@ -78,6 +78,8 @@ interface DriverPortalProps {
   setCurrentStep: (step: number) => void;
   stepState: "pending" | "in_transit";
   setStepState: (state: "pending" | "in_transit") => void;
+  lockedRouteIndex?: number;
+  onStepChange?: (routeIndex: number, currentStep: number, stepState: "pending" | "in_transit") => void;
 }
 
 export default function DriverPortal({
@@ -86,9 +88,11 @@ export default function DriverPortal({
   setCurrentStep,
   stepState,
   setStepState,
+  lockedRouteIndex,
+  onStepChange,
 }: DriverPortalProps) {
   const [selectedRouteIndex, setSelectedRouteIndex] = useState<number>(
-    data.routeSummaries[0]?.routeIndex || 1,
+    lockedRouteIndex ?? data.routeSummaries[0]?.routeIndex ?? 1,
   );
 
   useEffect(() => {
@@ -153,7 +157,7 @@ export default function DriverPortal({
           </p>
         </div>
 
-        {data.routeSummaries.length > 0 ? (
+        {lockedRouteIndex === undefined && data.routeSummaries.length > 0 ? (
           <div className="flex items-center bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
             <label className="text-sm font-bold text-slate-700 mr-3 whitespace-nowrap">
               เลือกยานพาหนะ
@@ -170,11 +174,11 @@ export default function DriverPortal({
               ))}
             </select>
           </div>
-        ) : (
+        ) : lockedRouteIndex === undefined ? (
           <div className="text-sm text-slate-500 italic">
             Please upload a CSV manifest first
           </div>
-        )}
+        ) : null}
       </div>
 
       {isCompleted ? (
@@ -288,7 +292,10 @@ export default function DriverPortal({
 
                   {stepState === "pending" ? (
                     <button
-                      onClick={() => setStepState("in_transit")}
+                      onClick={() => {
+                        setStepState("in_transit");
+                        onStepChange?.(selectedRouteIndex, currentStep, "in_transit");
+                      }}
                       className="w-full bg-amber-warning hover:bg-amber-warning-deep text-white font-bold py-4 px-4 rounded-lg shadow-md transition-all active:scale-[0.98] flex items-center justify-center"
                     >
                       <Navigation className="w-5 h-5 mr-2" />
@@ -296,7 +303,11 @@ export default function DriverPortal({
                     </button>
                   ) : (
                     <button
-                      onClick={handleNextStep}
+                      onClick={() => {
+                        const nextStep = currentStep + 1;
+                        handleNextStep();
+                        onStepChange?.(selectedRouteIndex, nextStep, "pending");
+                      }}
                       className="w-full bg-signal-green hover:bg-signal-green-hover text-white font-bold py-4 px-4 rounded-lg shadow-md transition-all active:scale-[0.98] flex items-center justify-center"
                     >
                       <PackageCheck className="w-5 h-5 mr-2" />
