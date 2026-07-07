@@ -1,13 +1,4 @@
-import { createRequire } from 'node:module';
-import type { DatabaseSync } from 'node:sqlite';
-
-// The bundled vite-node in this project's vitest version does not recognize
-// `node:sqlite` as a Node builtin (it is missing from Node's `builtinModules`
-// list as of Node 24), so a static ESM import fails to resolve under `vitest run`.
-// `import type` above is erased at compile time (never seen by vite-node's
-// runtime resolver); `createRequire` fetches the actual value via Node's own
-// CJS resolution, bypassing the broken ESM resolution entirely.
-const sqlite = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
+import { createClient, type Client } from '@libsql/client';
 
 const DEFAULT_VEHICLES = [
   { id: '4w-1', type: '4-wheel', name: 'รถบรรทุก 4 ล้อใหญ่ - คันที่ 1', capacityCBM: 12, fuelConsumption: 0.12, fixedCost: 300, color: '#10B981' },
@@ -21,10 +12,10 @@ const DEFAULT_VEHICLES = [
   { id: '10w-3', type: '10-wheel', name: 'รถบรรทุก 10 ล้อ - คันที่ 3', capacityCBM: 48, fuelConsumption: 0.28, fixedCost: 600, color: '#F97316' },
 ];
 
-export function createDb(path: string): DatabaseSync {
-  const db = new sqlite.DatabaseSync(path);
+export async function createDb(url: string, authToken?: string): Promise<Client> {
+  const db = authToken ? createClient({ url, authToken }) : createClient({ url });
 
-  db.exec(`
+  await db.executeMultiple(`
     CREATE TABLE IF NOT EXISTS vehicles (
       id TEXT PRIMARY KEY,
       type TEXT NOT NULL,
@@ -63,51 +54,50 @@ export function createDb(path: string): DatabaseSync {
     );
   `);
 
-  const settingsCount = (db.prepare('SELECT COUNT(*) as count FROM settings').get() as { count: number }).count;
+  const settingsCount = (await db.execute('SELECT COUNT(*) as count FROM settings')).rows[0].count as number;
   if (settingsCount === 0) {
-    db.prepare('INSERT INTO settings (id) VALUES (1)').run();
+    await db.execute('INSERT OR IGNORE INTO settings (id) VALUES (1)');
   }
 
-  const vehicleColumns = db.prepare('PRAGMA table_info(vehicles)').all() as { name: string }[];
+  const vehicleColumns = (await db.execute('PRAGMA table_info(vehicles)')).rows as unknown as { name: string }[];
   const hasFuelPriceColumn = vehicleColumns.some((c) => c.name === 'fuel_price');
   if (!hasFuelPriceColumn) {
-    db.exec('BEGIN');
-    try {
-      db.exec('ALTER TABLE vehicles ADD COLUMN fuel_price REAL NOT NULL DEFAULT 35');
-      const settingsRow = db.prepare('SELECT * FROM settings WHERE id = 1').get() as {
-        fuel_price_4w: number;
-        fuel_price_6w: number;
-        fuel_price_10w: number;
-      };
-      const priceForType = (type: string) =>
-        type === '4-wheel' ? settingsRow.fuel_price_4w :
-        type === '6-wheel' ? settingsRow.fuel_price_6w :
-        settingsRow.fuel_price_10w;
-      const existingVehicles = db.prepare('SELECT id, type FROM vehicles').all() as { id: string; type: string }[];
-      const updatePrice = db.prepare('UPDATE vehicles SET fuel_price = ? WHERE id = ?');
-      for (const v of existingVehicles) {
-        updatePrice.run(priceForType(v.type), v.id);
-      }
-      db.exec('COMMIT');
-    } catch (err) {
-      db.exec('ROLLBACK');
-      throw err;
+    await db.execute('ALTER TABLE vehicles ADD COLUMN fuel_price REAL NOT NULL DEFAULT 35');
+    const settingsRow = (await db.execute('SELECT * FROM settings WHERE id = 1')).rows[0] as unknown as {
+      fuel_price_4w: number;
+      fuel_price_6w: number;
+      fuel_price_10w: number;
+    };
+    const priceForType = (type: string) =>
+      type === '4-wheel' ? settingsRow.fuel_price_4w :
+      type === '6-wheel' ? settingsRow.fuel_price_6w :
+      settingsRow.fuel_price_10w;
+    const existingVehicles = (await db.execute('SELECT id, type FROM vehicles')).rows as unknown as { id: string; type: string }[];
+    if (existingVehicles.length > 0) {
+      await db.batch(
+        existingVehicles.map((v) => ({
+          sql: 'UPDATE vehicles SET fuel_price = ? WHERE id = ?',
+          args: [priceForType(v.type), v.id],
+        })),
+        'write'
+      );
     }
   }
 
   const hasDepartureTimeColumn = vehicleColumns.some((c) => c.name === 'departure_time');
   if (!hasDepartureTimeColumn) {
-    db.exec("ALTER TABLE vehicles ADD COLUMN departure_time TEXT NOT NULL DEFAULT '08:00'");
+    await db.execute("ALTER TABLE vehicles ADD COLUMN departure_time TEXT NOT NULL DEFAULT '08:00'");
   }
 
-  const vehicleCount = (db.prepare('SELECT COUNT(*) as count FROM vehicles').get() as { count: number }).count;
+  const vehicleCount = (await db.execute('SELECT COUNT(*) as count FROM vehicles')).rows[0].count as number;
   if (vehicleCount === 0) {
-    const insert = db.prepare(
-      'INSERT INTO vehicles (id, type, name, capacity_cbm, fuel_consumption, fixed_cost, color) VALUES (?, ?, ?, ?, ?, ?, ?)'
+    await db.batch(
+      DEFAULT_VEHICLES.map((v) => ({
+        sql: 'INSERT OR IGNORE INTO vehicles (id, type, name, capacity_cbm, fuel_consumption, fixed_cost, color) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        args: [v.id, v.type, v.name, v.capacityCBM, v.fuelConsumption, v.fixedCost, v.color],
+      })),
+      'write'
     );
-    for (const v of DEFAULT_VEHICLES) {
-      insert.run(v.id, v.type, v.name, v.capacityCBM, v.fuelConsumption, v.fixedCost, v.color);
-    }
   }
 
   return db;
