@@ -18,9 +18,6 @@ export interface DriverAccount {
 export interface FleetConfig {
   vehicles: Vehicle[];
   driverWage: number;
-  fuelPrice4W: number;
-  fuelPrice6W: number;
-  fuelPrice10W: number;
 }
 
 export interface ProgressEntry {

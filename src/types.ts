@@ -20,6 +20,7 @@ export interface Vehicle {
   fixedCost: number;
   color: string;
   driverUserId?: number | null;
+  fuelPrice: number;
 }
 
 export interface RouteLeg {
@@ -50,9 +51,6 @@ export interface ProcessingParams {
   avgSpeed: number;
   startTime: Date;
   driverWage: number;
-  fuelPrice4W: number;
-  fuelPrice6W: number;
-  fuelPrice10W: number;
   algorithm: 'savings' | 'nearest-neighbor' | 'sweep' | 'or-opt-sa' | 'solomon-i1';
   applyTwoOpt: boolean;
 }
