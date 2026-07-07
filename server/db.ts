@@ -1,6 +1,5 @@
 import { createRequire } from 'node:module';
 import type { DatabaseSync } from 'node:sqlite';
-import { hashPassword } from './auth';
 
 // The bundled vite-node in this project's vitest version does not recognize
 // `node:sqlite` as a Node builtin (it is missing from Node's `builtinModules`
@@ -26,15 +25,6 @@ export function createDb(path: string): DatabaseSync {
   const db = new sqlite.DatabaseSync(path);
 
   db.exec(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE NOT NULL,
-      password_hash TEXT NOT NULL,
-      role TEXT NOT NULL CHECK(role IN ('planner','driver')),
-      display_name TEXT NOT NULL,
-      created_at TEXT NOT NULL DEFAULT (datetime('now'))
-    );
-
     CREATE TABLE IF NOT EXISTS vehicles (
       id TEXT PRIMARY KEY,
       type TEXT NOT NULL,
@@ -43,7 +33,6 @@ export function createDb(path: string): DatabaseSync {
       fuel_consumption REAL NOT NULL,
       fixed_cost REAL NOT NULL,
       color TEXT NOT NULL,
-      driver_user_id INTEGER,
       fuel_price REAL NOT NULL DEFAULT 35
     );
 
@@ -72,13 +61,6 @@ export function createDb(path: string): DatabaseSync {
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
   `);
-
-  const userCount = (db.prepare('SELECT COUNT(*) as count FROM users').get() as { count: number }).count;
-  if (userCount === 0) {
-    db.prepare(
-      'INSERT INTO users (username, password_hash, role, display_name) VALUES (?, ?, ?, ?)'
-    ).run('admin', hashPassword('admin1234'), 'planner', 'Planner');
-  }
 
   const settingsCount = (db.prepare('SELECT COUNT(*) as count FROM settings').get() as { count: number }).count;
   if (settingsCount === 0) {

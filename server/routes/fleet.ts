@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import type { DatabaseSync } from 'node:sqlite';
-import { requireAuth, requireRole } from '../middleware';
 
 interface VehicleRow {
   id: string;
@@ -10,7 +9,6 @@ interface VehicleRow {
   fuel_consumption: number;
   fixed_cost: number;
   color: string;
-  driver_user_id: number | null;
   fuel_price: number;
 }
 
@@ -20,7 +18,6 @@ interface SettingsRow {
 
 export function fleetRouter(db: DatabaseSync): Router {
   const router = Router();
-  router.use(requireAuth, requireRole('planner'));
 
   router.get('/', (req, res) => {
     const rows = db.prepare('SELECT * FROM vehicles ORDER BY type, id').all() as unknown as VehicleRow[];
@@ -34,7 +31,6 @@ export function fleetRouter(db: DatabaseSync): Router {
         fuelConsumption: r.fuel_consumption,
         fixedCost: r.fixed_cost,
         color: r.color,
-        driverUserId: r.driver_user_id,
         fuelPrice: r.fuel_price,
       })),
       driverWage: settings.driver_wage,
@@ -58,10 +54,10 @@ export function fleetRouter(db: DatabaseSync): Router {
     try {
       db.prepare('DELETE FROM vehicles').run();
       const insert = db.prepare(
-        'INSERT INTO vehicles (id, type, name, capacity_cbm, fuel_consumption, fixed_cost, color, driver_user_id, fuel_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO vehicles (id, type, name, capacity_cbm, fuel_consumption, fixed_cost, color, fuel_price) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
       );
       for (const v of vehicles) {
-        insert.run(v.id, v.type, v.name, v.capacityCBM, v.fuelConsumption, v.fixedCost, v.color, v.driverUserId ?? null, v.fuelPrice);
+        insert.run(v.id, v.type, v.name, v.capacityCBM, v.fuelConsumption, v.fixedCost, v.color, v.fuelPrice);
       }
       db.prepare('UPDATE settings SET driver_wage = ? WHERE id = 1').run(driverWage ?? 60);
       db.exec('COMMIT');

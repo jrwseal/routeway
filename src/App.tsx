@@ -7,38 +7,12 @@ import DriverPortal from './components/DriverPortal';
 import StatisticsCar from './components/StatisticsCar';
 import AlgorithmComparison from './components/AlgorithmComparison';
 import ComparisonPopup from './components/ComparisonPopup';
-import DriverManagement from './components/DriverManagement';
 import { processData } from './lib/geo';
 import { getFleet, saveActivePlan } from './lib/api';
 import { AlertCircle, Loader2, Menu } from 'lucide-react';
 import FleetConfigModal from './components/FleetConfigModal';
-import Login from './components/Login';
-import DriverOnlyShell from './components/DriverOnlyShell';
-import { useAuth } from './context/AuthContext';
 
 export default function App() {
-  const { user, loading, logout } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="h-screen w-full flex items-center justify-center bg-neutral-canvas">
-        <Loader2 className="w-10 h-10 text-fleet-navy animate-spin" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Login />;
-  }
-
-  if (user.role === 'driver') {
-    return <DriverOnlyShell displayName={user.displayName} onLogout={logout} />;
-  }
-
-  return <PlannerApp onLogout={logout} />;
-}
-
-function PlannerApp({ onLogout }: { onLogout: () => void }) {
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
@@ -225,14 +199,11 @@ function PlannerApp({ onLogout }: { onLogout: () => void }) {
         setIsFleetConfigOpen={setIsFleetConfigOpen}
         isMobileNavOpen={isMobileNavOpen}
         onCloseMobileNav={() => setIsMobileNavOpen(false)}
-        onLogout={onLogout}
       />
 
       {/* Main Content Area */}
       <main className="flex-1 h-full overflow-y-auto">
-        {currentTab === 'drivers' ? (
-          <DriverManagement />
-        ) : isComparing ? (
+        {isComparing ? (
           <div className="h-full flex flex-col items-center justify-center">
             <Loader2 className="w-12 h-12 text-fleet-navy animate-spin mb-4" />
             <h2 className="text-xl font-bold text-slate-700">Running All Algorithms...</h2>

@@ -4,18 +4,10 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
 import { createDb } from './db';
-import { verifyPassword } from './auth';
 
 const sqlite = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
 
 describe('createDb', () => {
-  it('seeds a default planner account on first run', () => {
-    const db = createDb(':memory:');
-    const row = db.prepare('SELECT * FROM users WHERE username = ?').get('admin') as any;
-    expect(row.role).toBe('planner');
-    expect(verifyPassword('admin1234', row.password_hash)).toBe(true);
-  });
-
   it('seeds default settings', () => {
     const db = createDb(':memory:');
     const row = db.prepare('SELECT * FROM settings WHERE id = 1').get() as any;
@@ -36,8 +28,8 @@ describe('createDb', () => {
       const db1 = createDb(dbPath);
       db1.close();
       const db2 = createDb(dbPath);
-      const count = (db2.prepare('SELECT COUNT(*) as count FROM users').get() as any).count;
-      expect(count).toBe(1);
+      const count = (db2.prepare('SELECT COUNT(*) as count FROM vehicles').get() as any).count;
+      expect(count).toBe(9);
       db2.close();
     } finally {
       rmSync(dir, { recursive: true, force: true });

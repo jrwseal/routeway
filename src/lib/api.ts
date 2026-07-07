@@ -2,19 +2,6 @@ import { Vehicle, ProcessedData, OptimizationCriterion, RouteNode, RouteLeg } fr
 
 const BASE = '/api';
 
-export interface AuthUser {
-  id: number;
-  username: string;
-  role: 'planner' | 'driver';
-  displayName: string;
-}
-
-export interface DriverAccount {
-  id: number;
-  username: string;
-  displayName: string;
-}
-
 export interface FleetConfig {
   vehicles: Vehicle[];
   driverWage: number;
@@ -37,33 +24,6 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     throw new Error(body.error || 'Request failed');
   }
   return res.json();
-}
-
-export async function login(username: string, password: string): Promise<AuthUser> {
-  return request<AuthUser>('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
-}
-
-export async function logout(): Promise<void> {
-  await request('/auth/logout', { method: 'POST' });
-}
-
-export async function getMe(): Promise<AuthUser | null> {
-  const res = await fetch(`${BASE}/auth/me`, { credentials: 'include' });
-  if (res.status === 401) return null;
-  if (!res.ok) throw new Error('Failed to fetch session');
-  return res.json();
-}
-
-export async function listDrivers(): Promise<DriverAccount[]> {
-  return request<DriverAccount[]>('/drivers');
-}
-
-export async function createDriver(username: string, password: string, displayName: string): Promise<DriverAccount> {
-  return request<DriverAccount>('/drivers', { method: 'POST', body: JSON.stringify({ username, password, displayName }) });
-}
-
-export async function deleteDriver(id: number): Promise<void> {
-  await request(`/drivers/${id}`, { method: 'DELETE' });
 }
 
 export async function getFleet(): Promise<FleetConfig> {

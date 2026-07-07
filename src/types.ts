@@ -19,7 +19,6 @@ export interface Vehicle {
   fuelConsumption: number;
   fixedCost: number;
   color: string;
-  driverUserId?: number | null;
   fuelPrice: number;
 }
 

@@ -16,12 +16,11 @@ interface SidebarProps {
   setIsFleetConfigOpen: (isOpen: boolean) => void;
   isMobileNavOpen: boolean;
   onCloseMobileNav: () => void;
-  onLogout: () => void;
 }
 
 export default function Sidebar({
   currentTab, setCurrentTab, onDataLoaded, isProcessing, hasData, hasComparison,
-  avgSpeed, setAvgSpeed, setIsFleetConfigOpen, isMobileNavOpen, onCloseMobileNav, onLogout
+  avgSpeed, setAvgSpeed, setIsFleetConfigOpen, isMobileNavOpen, onCloseMobileNav
 }: SidebarProps) {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -96,7 +95,6 @@ export default function Sidebar({
     { id: 'carbon', label: 'Carbon Footprint', icon: <Leaf className="w-4 h-4 mr-2" /> },
     { id: 'statistics', label: 'Statistics car', icon: <BarChart className="w-4 h-4 mr-2" /> },
     { id: 'comparison', label: 'Algorithm Comparison', icon: <BarChart className="w-4 h-4 mr-2" /> },
-    { id: 'drivers', label: 'จัดการคนขับ', icon: <Truck className="w-4 h-4 mr-2" />, alwaysEnabled: true },
   ];
 
   return (
@@ -163,7 +161,7 @@ export default function Sidebar({
         {menuItems.map(item => (
           <button
             key={item.id}
-            disabled={(item as any).alwaysEnabled ? false : (item.id === 'comparison' ? !hasComparison : !hasData)}
+            disabled={item.id === 'comparison' ? !hasComparison : !hasData}
             onClick={() => { setCurrentTab(item.id); onCloseMobileNav(); }}
             className={`flex items-center px-4 py-3 rounded-md text-sm font-medium transition-colors ${
               currentTab === item.id 
@@ -176,14 +174,6 @@ export default function Sidebar({
           </button>
         ))}
       </nav>
-      <div className="px-4 pb-6">
-        <button
-          onClick={onLogout}
-          className="w-full text-left px-4 py-3 rounded-md text-sm font-medium text-slate-500 hover:bg-slate-100"
-        >
-          ออกจากระบบ
-        </button>
-      </div>
       </div>
     </>
   );

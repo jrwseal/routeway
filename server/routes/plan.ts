@@ -1,6 +1,5 @@
 import { Router } from 'express';
 import type { DatabaseSync } from 'node:sqlite';
-import { requireAuth, requireRole } from '../middleware';
 
 interface ActivePlanRow {
   optimization_criterion: string;
@@ -24,9 +23,8 @@ function loadPlan(db: DatabaseSync) {
 
 export function planRouter(db: DatabaseSync): Router {
   const router = Router();
-  router.use(requireAuth);
 
-  router.post('/', requireRole('planner'), (req, res) => {
+  router.post('/', (req, res) => {
     const { optimizationCriterion, data } = req.body ?? {};
     if (!data || !Array.isArray(data.routeSummaries)) {
       res.status(400).json({ error: 'Invalid plan payload' });
@@ -66,56 +64,11 @@ export function planRouter(db: DatabaseSync): Router {
 
   router.get('/active', (req, res) => {
     const plan = loadPlan(db);
-    if (!plan) {
-      res.json({ plan: null });
-      return;
-    }
-    if (req.user!.role === 'planner') {
-      res.json({ plan });
-      return;
-    }
-
-    const myRouteIndexes = plan.routeSummaries
-      .filter((s: any) => s.vehicle.driverUserId === req.user!.sub)
-      .map((s: any) => s.routeIndex);
-
-    if (myRouteIndexes.length === 0) {
-      res.json({ plan: null });
-      return;
-    }
-
-    const myLegs = plan.legs.filter((l: any) => myRouteIndexes.includes(l.routeIndex));
-    const myNodeIds = new Set<number>();
-    for (const leg of myLegs) {
-      myNodeIds.add(leg.fromNode.id);
-      myNodeIds.add(leg.toNode.id);
-    }
-
-    const progressRow = db.prepare(
-      'SELECT route_index, current_step, step_state FROM plan_progress WHERE route_index = ?'
-    ).get(myRouteIndexes[0]) as { route_index: number; current_step: number; step_state: string } | undefined;
-
-    res.json({
-      plan: {
-        optimizationCriterion: plan.optimizationCriterion,
-        nodes: plan.nodes.filter((n: any) => myNodeIds.has(n.id)),
-        legs: myLegs,
-        routeSummaries: plan.routeSummaries.filter((s: any) => myRouteIndexes.includes(s.routeIndex)),
-      },
-      progress: progressRow
-        ? { routeIndex: progressRow.route_index, currentStep: progressRow.current_step, stepState: progressRow.step_state }
-        : null,
-    });
+    res.json({ plan });
   });
 
-  router.post('/progress', requireRole('driver'), (req, res) => {
+  router.post('/progress', (req, res) => {
     const { routeIndex, currentStep, stepState } = req.body ?? {};
-    const plan = loadPlan(db);
-    const owns = plan?.routeSummaries.some((s: any) => s.routeIndex === routeIndex && s.vehicle.driverUserId === req.user!.sub);
-    if (!owns) {
-      res.status(403).json({ error: 'Forbidden' });
-      return;
-    }
     db.prepare(`
       INSERT INTO plan_progress (route_index, current_step, step_state, updated_at)
       VALUES (?, ?, ?, datetime('now'))
@@ -127,7 +80,7 @@ export function planRouter(db: DatabaseSync): Router {
     res.json({ ok: true });
   });
 
-  router.get('/progress', requireRole('planner'), (req, res) => {
+  router.get('/progress', (req, res) => {
     const rows = db.prepare('SELECT route_index, current_step, step_state FROM plan_progress ORDER BY route_index').all() as any[];
     res.json(rows.map(r => ({ routeIndex: r.route_index, currentStep: r.current_step, stepState: r.step_state })));
   });
