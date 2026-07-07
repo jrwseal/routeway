@@ -23,6 +23,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fixedCost: 300,
     color: "#10B981",
     fuelPrice: 35,
+    departureTime: "08:00",
   },
   {
     id: "4w-2",
@@ -33,6 +34,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fixedCost: 300,
     color: "#10B981",
     fuelPrice: 35,
+    departureTime: "08:00",
   },
   {
     id: "4w-3",
@@ -43,6 +45,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fixedCost: 300,
     color: "#10B981",
     fuelPrice: 35,
+    departureTime: "08:00",
   },
   {
     id: "6w-1",
@@ -53,6 +56,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fixedCost: 450,
     color: "#3B82F6",
     fuelPrice: 35,
+    departureTime: "08:00",
   },
   {
     id: "6w-2",
@@ -63,6 +67,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fixedCost: 450,
     color: "#3B82F6",
     fuelPrice: 35,
+    departureTime: "08:00",
   },
   {
     id: "6w-3",
@@ -73,6 +78,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fixedCost: 450,
     color: "#3B82F6",
     fuelPrice: 35,
+    departureTime: "08:00",
   },
   {
     id: "10w-1",
@@ -83,6 +89,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fixedCost: 600,
     color: "#F97316",
     fuelPrice: 35,
+    departureTime: "08:00",
   },
   {
     id: "10w-2",
@@ -93,6 +100,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fixedCost: 600,
     color: "#F97316",
     fuelPrice: 35,
+    departureTime: "08:00",
   },
   {
     id: "10w-3",
@@ -103,6 +111,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fixedCost: 600,
     color: "#F97316",
     fuelPrice: 35,
+    departureTime: "08:00",
   },
 ];
 
@@ -168,9 +177,26 @@ export async function getRoute(
 
 export async function processData(
   nodes: RouteNode[],
-  params: ProcessingParams,
+  paramsWithoutStartTime: Omit<ProcessingParams, 'startTime'>,
 ): Promise<ProcessedData> {
   const depot = nodes[0];
+
+  const todayStr = new Date().toISOString().split('T')[0];
+  const parseVehicleTime = (timeStr: string) => {
+    const [h, m] = timeStr.split(':');
+    return new Date(`${todayStr} ${(h ?? '08').padStart(2, '0')}:${(m ?? '00').padStart(2, '0')}`);
+  };
+  const earliestDepartureTime = paramsWithoutStartTime.fleetPool.length > 0
+    ? paramsWithoutStartTime.fleetPool.reduce(
+        (min, v) => {
+          const t = parseVehicleTime(v.departureTime);
+          return t < min ? t : min;
+        },
+        parseVehicleTime(paramsWithoutStartTime.fleetPool[0].departureTime),
+      )
+    : new Date(`${todayStr} 08:00`);
+
+  const params: ProcessingParams = { ...paramsWithoutStartTime, startTime: earliestDepartureTime };
 
   let traditionalDistance = 0;
   let traditionalCO2 = 0;
@@ -268,7 +294,7 @@ export async function processData(
       if (vIndex !== -1) availableFleet.splice(vIndex, 1);
     }
 
-    let currentTime = params.startTime;
+    let currentTime = parseVehicleTime(assignedVehicle.departureTime);
     let currentLoc = depot;
     let routeDistance = 0;
     let routeWaitingMinutes = 0;
