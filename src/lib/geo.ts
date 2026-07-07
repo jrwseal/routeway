@@ -22,6 +22,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fuelConsumption: 0.12,
     fixedCost: 300,
     color: "#10B981",
+    fuelPrice: 35,
   },
   {
     id: "4w-2",
@@ -31,6 +32,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fuelConsumption: 0.12,
     fixedCost: 300,
     color: "#10B981",
+    fuelPrice: 35,
   },
   {
     id: "4w-3",
@@ -40,6 +42,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fuelConsumption: 0.12,
     fixedCost: 300,
     color: "#10B981",
+    fuelPrice: 35,
   },
   {
     id: "6w-1",
@@ -49,6 +52,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fuelConsumption: 0.2,
     fixedCost: 450,
     color: "#3B82F6",
+    fuelPrice: 35,
   },
   {
     id: "6w-2",
@@ -58,6 +62,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fuelConsumption: 0.2,
     fixedCost: 450,
     color: "#3B82F6",
+    fuelPrice: 35,
   },
   {
     id: "6w-3",
@@ -67,6 +72,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fuelConsumption: 0.2,
     fixedCost: 450,
     color: "#3B82F6",
+    fuelPrice: 35,
   },
   {
     id: "10w-1",
@@ -76,6 +82,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fuelConsumption: 0.28,
     fixedCost: 600,
     color: "#F97316",
+    fuelPrice: 35,
   },
   {
     id: "10w-2",
@@ -85,6 +92,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fuelConsumption: 0.28,
     fixedCost: 600,
     color: "#F97316",
+    fuelPrice: 35,
   },
   {
     id: "10w-3",
@@ -94,6 +102,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
     fuelConsumption: 0.28,
     fixedCost: 600,
     color: "#F97316",
+    fuelPrice: 35,
   },
 ];
 
@@ -179,13 +188,6 @@ export async function processData(
     return suitable[0];
   };
 
-  const getFuelPrice = (type: string) => {
-    if (type === "4-wheel") return params.fuelPrice4W;
-    if (type === "6-wheel") return params.fuelPrice6W;
-    if (type === "10-wheel") return params.fuelPrice10W;
-    return 35;
-  };
-
   let traditionalCost = 0;
 
   // Calculate traditional back-and-forth distance and CO2
@@ -212,7 +214,7 @@ export async function processData(
     traditionalCost +=
       roundTripDist *
         baselineVehicle.fuelConsumption *
-        getFuelPrice(baselineVehicle.type) +
+        baselineVehicle.fuelPrice +
       (waitMin / 60) * params.driverWage +
       baselineVehicle.fixedCost;
   }
@@ -344,7 +346,7 @@ export async function processData(
     milkRunCost +=
       routeDistance *
         assignedVehicle.fuelConsumption *
-        getFuelPrice(assignedVehicle.type) +
+        assignedVehicle.fuelPrice +
       (routeWaitingMinutes / 60) * params.driverWage +
       assignedVehicle.fixedCost;
 
