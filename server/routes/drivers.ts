@@ -37,6 +37,15 @@ export function driversRouter(db: DatabaseSync): Router {
       return;
     }
     db.prepare('UPDATE vehicles SET driver_user_id = NULL WHERE driver_user_id = ?').run(id);
+
+    const planRow = db.prepare('SELECT route_summaries_json FROM active_plan WHERE id = 1').get() as { route_summaries_json: string } | undefined;
+    if (planRow) {
+      const routeSummaries = JSON.parse(planRow.route_summaries_json).map((s: any) =>
+        s.vehicle.driverUserId === id ? { ...s, vehicle: { ...s.vehicle, driverUserId: null } } : s
+      );
+      db.prepare('UPDATE active_plan SET route_summaries_json = ? WHERE id = 1').run(JSON.stringify(routeSummaries));
+    }
+
     res.json({ ok: true });
   });
 
