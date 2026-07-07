@@ -411,5 +411,6 @@ export async function processData(
     totalWaitingHours: totalWaitingMinutes / 60,
     totalTrucksUsed: routeSummaries.length,
     routeSummaries,
+    departureTime: params.startTime,
   };
 }

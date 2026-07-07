@@ -84,4 +84,5 @@ export interface ProcessedData {
   totalWaitingHours: number;
   totalTrucksUsed: number;
   routeSummaries: RouteSummary[];
+  departureTime: Date;
 }
