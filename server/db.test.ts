@@ -87,4 +87,42 @@ describe('createDb', () => {
       rmSync(dir, { recursive: true, force: true });
     }
   });
+
+  it('backfills departure_time for a vehicles table that predates the column', () => {
+    const dir = mkdtempSync(join(tmpdir(), 'routeway-db-migration-test-'));
+    const dbPath = join(dir, 'test.db');
+    try {
+      const oldDb = new sqlite.DatabaseSync(dbPath);
+      oldDb.exec(`
+        CREATE TABLE vehicles (
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          name TEXT NOT NULL,
+          capacity_cbm REAL NOT NULL,
+          fuel_consumption REAL NOT NULL,
+          fixed_cost REAL NOT NULL,
+          color TEXT NOT NULL,
+          fuel_price REAL NOT NULL DEFAULT 35
+        );
+        CREATE TABLE settings (
+          id INTEGER PRIMARY KEY CHECK (id = 1),
+          driver_wage REAL NOT NULL DEFAULT 60,
+          fuel_price_4w REAL NOT NULL DEFAULT 35,
+          fuel_price_6w REAL NOT NULL DEFAULT 35,
+          fuel_price_10w REAL NOT NULL DEFAULT 35
+        );
+        INSERT INTO settings (id, driver_wage, fuel_price_4w, fuel_price_6w, fuel_price_10w) VALUES (1, 60, 35, 35, 35);
+        INSERT INTO vehicles (id, type, name, capacity_cbm, fuel_consumption, fixed_cost, color, fuel_price) VALUES
+          ('4w-1', '4-wheel', 'Old 4W', 12, 0.12, 300, '#10B981', 35);
+      `);
+      oldDb.close();
+
+      const migratedDb = createDb(dbPath);
+      const row = migratedDb.prepare('SELECT departure_time as departureTime FROM vehicles WHERE id = ?').get('4w-1') as any;
+      expect(row.departureTime).toBe('08:00');
+      migratedDb.close();
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
 });
