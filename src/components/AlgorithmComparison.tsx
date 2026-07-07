@@ -7,7 +7,7 @@ interface Props {
   optimizationCriterion: OptimizationCriterion;
 }
 
-function bestIdx(data: ComparisonResult[], key: keyof Pick<ComparisonResult, 'milkRunDistance' | 'milkRunCost' | 'milkRunCO2' | 'totalTrucksUsed'>): number {
+function bestIdx(data: ComparisonResult[], key: keyof Pick<ComparisonResult, 'milkRunDistance' | 'milkRunCost' | 'milkRunCO2' | 'milkRunWaitingHours' | 'totalTrucksUsed'>): number {
   return data.reduce((bi, c, i) => (c[key] < data[bi][key] ? i : bi), 0);
 }
 
@@ -15,6 +15,7 @@ const CRITERION_LABEL: Record<OptimizationCriterion, string> = {
   cost: 'Min Cost',
   co2: 'Min CO2',
   distance: 'Min Distance',
+  waiting: 'Min Waiting',
 };
 
 export default function AlgorithmComparison({ data, onSelectVariant, optimizationCriterion }: Props) {
@@ -23,16 +24,19 @@ export default function AlgorithmComparison({ data, onSelectVariant, optimizatio
   const bestDist = bestIdx(data, 'milkRunDistance');
   const bestCost = bestIdx(data, 'milkRunCost');
   const bestCO2 = bestIdx(data, 'milkRunCO2');
+  const bestWaiting = bestIdx(data, 'milkRunWaitingHours');
   const bestTrucks = bestIdx(data, 'totalTrucksUsed');
 
   const bestByCriterion =
     optimizationCriterion === 'co2' ? bestCO2 :
     optimizationCriterion === 'distance' ? bestDist :
+    optimizationCriterion === 'waiting' ? bestWaiting :
     bestCost;
   const winner = data[bestByCriterion];
   const winnerValue =
     optimizationCriterion === 'co2' ? `${winner.milkRunCO2.toFixed(1)} kg CO₂` :
     optimizationCriterion === 'distance' ? `${winner.milkRunDistance.toFixed(1)} km` :
+    optimizationCriterion === 'waiting' ? `${winner.milkRunWaitingHours.toFixed(1)} h waiting` :
     `฿${winner.milkRunCost.toLocaleString('th-TH', { maximumFractionDigits: 0 })}`;
   const winnerLabel = `${winner.algorithm}${winner.algorithm === 'Or-opt + SA' ? '' : winner.twoOpt ? ' (2-opt)' : ''}`;
 
@@ -69,6 +73,7 @@ export default function AlgorithmComparison({ data, onSelectVariant, optimizatio
               <th className="px-4 py-3 text-right font-semibold">vs Savings</th>
               <th className="px-4 py-3 text-right font-semibold">Cost (฿)</th>
               <th className="px-4 py-3 text-right font-semibold">CO₂ (kg)</th>
+              <th className="px-4 py-3 text-right font-semibold">Waiting (h)</th>
               <th className="px-4 py-3 text-right font-semibold">Trucks</th>
               <th className="px-4 py-3 text-center font-semibold">Detail</th>
             </tr>
@@ -93,6 +98,9 @@ export default function AlgorithmComparison({ data, onSelectVariant, optimizatio
                 </td>
                 <td className={`px-4 py-3 text-right rounded ${colClass(i, bestCO2)}`}>
                   {row.milkRunCO2.toFixed(1)}
+                </td>
+                <td className={`px-4 py-3 text-right rounded ${colClass(i, bestWaiting)}`}>
+                  {row.milkRunWaitingHours.toFixed(1)}
                 </td>
                 <td className={`px-4 py-3 text-right rounded ${colClass(i, bestTrucks)}`}>
                   {row.totalTrucksUsed}
