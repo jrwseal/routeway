@@ -98,13 +98,16 @@ function reviveLeg(leg: RouteLeg): RouteLeg {
   };
 }
 
-export async function getActivePlan(): Promise<ProcessedData | null> {
-  const { plan } = await request<{ plan: ProcessedData | null }>('/plan/active');
+export async function getActivePlan(): Promise<{ plan: ProcessedData; progress: ProgressEntry | null } | null> {
+  const { plan, progress } = await request<{ plan: ProcessedData | null; progress: ProgressEntry | null }>('/plan/active');
   if (!plan) return null;
   return {
-    ...plan,
-    nodes: plan.nodes.map(reviveNode),
-    legs: plan.legs.map(reviveLeg),
+    plan: {
+      ...plan,
+      nodes: plan.nodes.map(reviveNode),
+      legs: plan.legs.map(reviveLeg),
+    },
+    progress: progress ?? null,
   };
 }
 

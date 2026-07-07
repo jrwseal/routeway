@@ -67,6 +67,7 @@ describe('plan routes', () => {
 
     const driverAgent = request.agent(app);
     await driverAgent.post('/api/auth/login').send({ username: 'somchai', password: 'pass1234' });
+    await driverAgent.post('/api/plan/progress').send({ routeIndex: 1, currentStep: 1, stepState: 'in_transit' });
     const res = await driverAgent.get('/api/plan/active');
     expect(res.body.plan.routeSummaries).toHaveLength(1);
     expect(res.body.plan.legs).toHaveLength(1);
@@ -75,6 +76,7 @@ describe('plan routes', () => {
     expect(res.body.plan.traditionalCost).toBeUndefined();
     expect(res.body.plan.savingsPercentage).toBeUndefined();
     expect(res.body.plan.totalTrucksUsed).toBeUndefined();
+    expect(res.body.progress).toEqual({ routeIndex: 1, currentStep: 1, stepState: 'in_transit' });
 
     const otherRes = await agent.post('/api/drivers').send({ username: 'wichai', password: 'pass1234', displayName: 'วิชัย' });
     const otherAgent = request.agent(app);

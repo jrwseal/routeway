@@ -32,9 +32,10 @@ describe('api client', () => {
           }],
           routeSummaries: [],
         },
+        progress: null,
       }),
     });
-    const plan = await getActivePlan();
-    expect(plan!.legs[0].arrivalDate).toBeInstanceOf(Date);
+    const result = await getActivePlan();
+    expect(result!.plan.legs[0].arrivalDate).toBeInstanceOf(Date);
   });
 });

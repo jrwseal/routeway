@@ -10,7 +10,17 @@ export default function DriverOnlyShell({ displayName, onLogout }: { displayName
   const [stepState, setStepState] = useState<'pending' | 'in_transit'>('pending');
 
   useEffect(() => {
-    getActivePlan().then(setPlan);
+    getActivePlan().then(result => {
+      if (!result) {
+        setPlan(null);
+        return;
+      }
+      setPlan(result.plan);
+      if (result.progress) {
+        setCurrentStep(result.progress.currentStep);
+        setStepState(result.progress.stepState as 'pending' | 'in_transit');
+      }
+    });
   }, []);
 
   if (plan === 'loading') {

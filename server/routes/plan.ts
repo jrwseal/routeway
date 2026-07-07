@@ -91,6 +91,10 @@ export function planRouter(db: DatabaseSync): Router {
       myNodeIds.add(leg.toNode.id);
     }
 
+    const progressRow = db.prepare(
+      'SELECT route_index, current_step, step_state FROM plan_progress WHERE route_index = ?'
+    ).get(myRouteIndexes[0]) as { route_index: number; current_step: number; step_state: string } | undefined;
+
     res.json({
       plan: {
         optimizationCriterion: plan.optimizationCriterion,
@@ -98,6 +102,9 @@ export function planRouter(db: DatabaseSync): Router {
         legs: myLegs,
         routeSummaries: plan.routeSummaries.filter((s: any) => myRouteIndexes.includes(s.routeIndex)),
       },
+      progress: progressRow
+        ? { routeIndex: progressRow.route_index, currentStep: progressRow.current_step, stepState: progressRow.step_state }
+        : null,
     });
   });
 
