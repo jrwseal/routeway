@@ -46,10 +46,14 @@ describe('drivers routes', () => {
     const driverId = createRes.body.id;
 
     const db = (app as any).locals?.db;
-    await agent.put('/api/fleet').send({
-      vehicles: [{ id: '4w-1', type: '4-wheel', name: 'Truck 1', capacityCBM: 12, fuelConsumption: 0.12, fixedCost: 300, color: '#10B981', driverUserId: driverId }],
-      driverWage: 60, fuelPrice4W: 35, fuelPrice6W: 35, fuelPrice10W: 35,
+    const fleetPutRes = await agent.put('/api/fleet').send({
+      vehicles: [{ id: '4w-1', type: '4-wheel', name: 'Truck 1', capacityCBM: 12, fuelConsumption: 0.12, fixedCost: 300, color: '#10B981', fuelPrice: 35, driverUserId: driverId }],
+      driverWage: 60,
     });
+    expect(fleetPutRes.status).toBe(200);
+
+    const fleetBeforeDelete = await agent.get('/api/fleet');
+    expect(fleetBeforeDelete.body.vehicles[0].driverUserId).toBe(driverId);
 
     // Capture the driver's own session (Set-Cookie) BEFORE they're deleted —
     // a deleted user can't log in again, but their existing JWT is still valid
