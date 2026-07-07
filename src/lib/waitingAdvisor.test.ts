@@ -106,6 +106,17 @@ describe('getWaitingAdvisory', () => {
     expect(advisory!.suggestedDepartureTime).toEqual(new Date('2026-07-07T08:10:00.000Z'));
   });
 
+  it('returns null when total waiting exceeds the threshold but no leg has a positive wait', () => {
+    const data = makeData({
+      totalWaitingHours: 2,
+      legs: [
+        makeLeg({ waitingMinutes: 0 }),
+        makeLeg({ waitingMinutes: 0 }),
+      ],
+    });
+    expect(getWaitingAdvisory(data)).toBeNull();
+  });
+
   it('suggests no safe shift when the schedule is already at its tightest deadline', () => {
     const data = makeData({
       totalWaitingHours: 2,

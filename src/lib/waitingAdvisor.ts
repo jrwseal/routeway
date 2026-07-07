@@ -15,6 +15,9 @@ export function getWaitingAdvisory(data: ProcessedData): WaitingAdvisory | null 
   }
 
   const positiveWaits = data.legs.map(leg => leg.waitingMinutes).filter(w => w > 0);
+  if (positiveWaits.length === 0) {
+    return null;
+  }
   const safeShiftMinutes = Math.min(...positiveWaits);
 
   const slacks: number[] = [];
