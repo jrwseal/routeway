@@ -152,6 +152,7 @@ function PlannerApp({ onLogout }: { onLogout: () => void }) {
           milkRunDistance: d.milkRunDistance,
           milkRunCost: d.milkRunCost,
           milkRunCO2: d.milkRunCO2,
+          milkRunWaitingHours: d.totalWaitingHours,
           totalTrucksUsed: d.totalTrucksUsed,
         });
         variantData.push(d);
@@ -160,10 +161,18 @@ function PlannerApp({ onLogout }: { onLogout: () => void }) {
       }
     });
 
+    // Auto-select best result for detail views, per the chosen optimization criterion,
+    // preferring fewer time-window violations before cost/CO2/distance.
+    const delayedCount = (d: ProcessedData) => d.legs.filter(l => l.status === 'Delayed').length;
     let bestData: ProcessedData | null = null;
     if (variantData.length > 0) {
-      const metricKey = optimizationCriterion === 'co2' ? 'milkRunCO2' : optimizationCriterion === 'distance' ? 'milkRunDistance' : 'milkRunCost';
-      const bestIdx = comparison.reduce((bi, c, i) => c[metricKey] < comparison[bi][metricKey] ? i : bi, 0);
+      const metricKey = optimizationCriterion === 'co2' ? 'milkRunCO2' : optimizationCriterion === 'distance' ? 'milkRunDistance' : optimizationCriterion === 'waiting' ? 'milkRunWaitingHours' : 'milkRunCost';
+      const bestIdx = comparison.reduce((bi, c, i) => {
+        const biDelayed = delayedCount(variantData[bi]);
+        const iDelayed = delayedCount(variantData[i]);
+        if (iDelayed !== biDelayed) return iDelayed < biDelayed ? i : bi;
+        return c[metricKey] < comparison[bi][metricKey] ? i : bi;
+      }, 0);
       bestData = variantData[bestIdx];
       setProcessedData(bestData);
     }
@@ -344,6 +353,7 @@ function PlannerApp({ onLogout }: { onLogout: () => void }) {
                     { value: 'cost', label: 'Min Cost' },
                     { value: 'co2', label: 'Min CO2' },
                     { value: 'distance', label: 'Min Distance' },
+                    { value: 'waiting', label: 'Min Waiting' },
                   ] as { value: OptimizationCriterion; label: string }[]).map(({ value, label }) => (
                     <label
                       key={value}

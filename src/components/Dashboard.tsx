@@ -3,6 +3,7 @@ import { ProcessedData } from "../types";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import RouteMap from "./RouteMap";
 import LiveDeliveryStatus from "./LiveDeliveryStatus";
+import WaitingTimeBanner from "./WaitingTimeBanner";
 
 interface DashboardProps {
   data: ProcessedData;
@@ -25,6 +26,8 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
           Dashboard & Savings Overview
         </p>
       </div>
+
+      <WaitingTimeBanner data={data} />
 
       <RouteMap data={data} onViewAlgorithm={onViewAlgorithm} />
 

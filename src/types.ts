@@ -43,7 +43,7 @@ export interface RouteSummary {
   vehicle: Vehicle;
 }
 
-export type OptimizationCriterion = 'cost' | 'co2' | 'distance';
+export type OptimizationCriterion = 'cost' | 'co2' | 'distance' | 'waiting';
 
 export interface ProcessingParams {
   fleetPool: Vehicle[];
@@ -63,6 +63,7 @@ export interface ComparisonResult {
   milkRunDistance: number;
   milkRunCost: number;
   milkRunCO2: number;
+  milkRunWaitingHours: number;
   totalTrucksUsed: number;
 }
 
@@ -85,4 +86,5 @@ export interface ProcessedData {
   totalWaitingHours: number;
   totalTrucksUsed: number;
   routeSummaries: RouteSummary[];
+  departureTime: Date;
 }
