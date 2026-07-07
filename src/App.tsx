@@ -178,13 +178,23 @@ function PlannerApp({ onLogout }: { onLogout: () => void }) {
     setIsComparing(false);
 
     if (bestData) {
-      saveActivePlan(optimizationCriterion, bestData);
+      try {
+        await saveActivePlan(optimizationCriterion, bestData);
+      } catch (err) {
+        console.error('Failed to save active plan:', err);
+        alert('บันทึกแผนเส้นทางไปยังเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่ หรือแจ้งผู้ดูแลระบบ');
+      }
     }
   };
 
-  const selectVariant = (idx: number) => {
+  const selectVariant = async (idx: number) => {
     setProcessedData(variantResults[idx]);
-    saveActivePlan(optimizationCriterion, variantResults[idx]);
+    try {
+      await saveActivePlan(optimizationCriterion, variantResults[idx]);
+    } catch (err) {
+      console.error('Failed to save active plan:', err);
+      alert('บันทึกแผนเส้นทางไปยังเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่ หรือแจ้งผู้ดูแลระบบ');
+    }
   };
 
   return (
