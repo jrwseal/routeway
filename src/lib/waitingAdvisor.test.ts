@@ -134,4 +134,25 @@ describe('getWaitingAdvisory', () => {
     expect(advisory!.suggestedDelayMinutes).toBe(0);
     expect(advisory!.suggestedDepartureTime).toBeNull();
   });
+
+  it('floors (not rounds) fractional slack to prevent deadline overshoot', () => {
+    // Fractional slack: 10.6 minutes (from 09:00:00 to 09:10:36).
+    // With Math.floor, suggestedDelayMinutes = 10 (safe).
+    // With Math.round, it would be 11 (violates deadline by ~24 seconds).
+    const data = makeData({
+      totalWaitingHours: 2,
+      legs: [
+        makeLeg({ waitingMinutes: 90 }),
+        makeLeg({
+          waitingMinutes: 30,
+          arrivalDate: new Date('2026-07-07T09:00:00.000Z'),
+          toNode: makeNode(2, new Date('2026-07-07T09:10:36.000Z')),
+        }),
+      ],
+    });
+    const advisory = getWaitingAdvisory(data);
+    expect(advisory).not.toBeNull();
+    expect(advisory!.suggestedDelayMinutes).toBe(10);
+    expect(advisory!.suggestedDepartureTime).toEqual(new Date('2026-07-07T08:10:00.000Z'));
+  });
 });

@@ -29,7 +29,7 @@ export function getWaitingAdvisory(data: ProcessedData): WaitingAdvisory | null 
   const minSlack = slacks.length > 0 ? Math.min(...slacks) : Infinity;
 
   const cappedDelay = Math.max(0, Math.min(safeShiftMinutes, minSlack));
-  const suggestedDelayMinutes = Math.round(cappedDelay);
+  const suggestedDelayMinutes = Math.floor(cappedDelay);
 
   return {
     totalWaitingHours: data.totalWaitingHours,
