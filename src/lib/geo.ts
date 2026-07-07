@@ -7,7 +7,7 @@ import {
   RouteSummary,
 } from "../types";
 import { addSeconds, isAfter, isBefore } from "date-fns";
-import { clarkWrightSavings, nearestNeighbor, sweep, twoOpt, orOptAnnealing, solomonI1 } from './algorithms';
+import { clarkWrightSavings, nearestNeighbor, sweep, twoOptFeasible, orOptAnnealing, solomonI1 } from './algorithms';
 
 function deg2rad(deg: number) {
   return deg * (Math.PI / 180);
@@ -230,7 +230,7 @@ export async function processData(
 
   let routes = buildRoutes();
   if (params.applyTwoOpt) {
-    routes = routes.map(r => twoOpt(r, nodes));
+    routes = routes.map(r => twoOptFeasible(r, nodes, params));
   }
 
   // 3. BEST-FIT / GREEN FLEET SELECTION & CO2 CALCULATION
