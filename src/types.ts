@@ -20,6 +20,7 @@ export interface Vehicle {
   fixedCost: number;
   color: string;
   fuelPrice: number;
+  departureTime: string;
 }
 
 export interface RouteLeg {

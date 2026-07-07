@@ -33,7 +33,8 @@ export function createDb(path: string): DatabaseSync {
       fuel_consumption REAL NOT NULL,
       fixed_cost REAL NOT NULL,
       color TEXT NOT NULL,
-      fuel_price REAL NOT NULL DEFAULT 35
+      fuel_price REAL NOT NULL DEFAULT 35,
+      departure_time TEXT NOT NULL DEFAULT '08:00'
     );
 
     CREATE TABLE IF NOT EXISTS settings (
@@ -92,6 +93,11 @@ export function createDb(path: string): DatabaseSync {
       db.exec('ROLLBACK');
       throw err;
     }
+  }
+
+  const hasDepartureTimeColumn = vehicleColumns.some((c) => c.name === 'departure_time');
+  if (!hasDepartureTimeColumn) {
+    db.exec("ALTER TABLE vehicles ADD COLUMN departure_time TEXT NOT NULL DEFAULT '08:00'");
   }
 
   const vehicleCount = (db.prepare('SELECT COUNT(*) as count FROM vehicles').get() as { count: number }).count;

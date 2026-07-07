@@ -57,6 +57,7 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
       fixedCost: type === '4-wheel' ? 300 : type === '6-wheel' ? 450 : 600,
       color: TYPE_COLORS[type],
       fuelPrice: 35,
+      departureTime: '08:00',
     }]);
   };
 
@@ -132,6 +133,7 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
                         <th className="pb-2 pr-2">Fuel (L/km)</th>
                         <th className="pb-2 pr-2">ราคาน้ำมัน (บาท/ลิตร)</th>
                         <th className="pb-2 pr-2">Fixed Cost</th>
+                        <th className="pb-2 pr-2">เวลาออกเดินทาง</th>
                         <th className="pb-2 w-8"></th>
                       </tr>
                     </thead>
@@ -163,6 +165,9 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" step="1" min="0" value={v.fixedCost} onChange={(e) => updateVehicle(v.id, 'fixedCost', Number(e.target.value))} className="w-24 border border-slate-300 rounded px-2 py-1" />
+                          </td>
+                          <td className="py-2 pr-2">
+                            <input type="time" value={v.departureTime} onChange={(e) => updateVehicle(v.id, 'departureTime', e.target.value)} className="border border-slate-300 rounded px-2 py-1" />
                           </td>
                           <td className="py-2 text-right">
                             <button onClick={() => removeVehicle(v.id)} className="text-slate-400 hover:text-alert-red">
