@@ -37,18 +37,16 @@ describe('fleet routes', () => {
 
     const putRes = await agent.put('/api/fleet').send({
       vehicles: [
-        { id: '4w-1', type: '4-wheel', name: 'Truck 1', capacityCBM: 12, fuelConsumption: 0.12, fixedCost: 300, color: '#10B981', driverUserId: driverId },
+        { id: '4w-1', type: '4-wheel', name: 'Truck 1', capacityCBM: 12, fuelConsumption: 0.12, fixedCost: 300, color: '#10B981', driverUserId: driverId, fuelPrice: 36 },
       ],
       driverWage: 70,
-      fuelPrice4W: 36,
-      fuelPrice6W: 36,
-      fuelPrice10W: 36,
     });
     expect(putRes.status).toBe(200);
 
     const getRes = await agent.get('/api/fleet');
     expect(getRes.body.vehicles).toHaveLength(1);
     expect(getRes.body.vehicles[0].driverUserId).toBe(driverId);
+    expect(getRes.body.vehicles[0].fuelPrice).toBe(36);
     expect(getRes.body.driverWage).toBe(70);
   });
 
