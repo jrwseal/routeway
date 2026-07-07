@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Vehicle } from '../types';
-import { DriverAccount, getFleet, saveFleet, listDrivers } from '../lib/api';
+import { getFleet, saveFleet } from '../lib/api';
 import { Truck, Plus, Trash2, Save, X } from 'lucide-react';
 
 interface FleetConfigModalProps {
@@ -23,17 +23,15 @@ const VEHICLE_TYPES = ['4-wheel', '6-wheel', '10-wheel'];
 
 export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConfigModalProps) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [drivers, setDrivers] = useState<DriverAccount[]>([]);
   const [driverWage, setDriverWage] = useState(60);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (!isOpen) return;
     setIsLoading(true);
-    Promise.all([getFleet(), listDrivers()]).then(([fleet, driverList]) => {
+    getFleet().then(fleet => {
       setVehicles(fleet.vehicles);
       setDriverWage(fleet.driverWage);
-      setDrivers(driverList);
       setIsLoading(false);
     });
   }, [isOpen]);
@@ -58,7 +56,6 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
       fuelConsumption: type === '4-wheel' ? 0.12 : type === '6-wheel' ? 0.2 : 0.28,
       fixedCost: type === '4-wheel' ? 300 : type === '6-wheel' ? 450 : 600,
       color: TYPE_COLORS[type],
-      driverUserId: null,
       fuelPrice: 35,
     }]);
   };
@@ -135,7 +132,6 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
                         <th className="pb-2 pr-2">Fuel (L/km)</th>
                         <th className="pb-2 pr-2">ราคาน้ำมัน (บาท/ลิตร)</th>
                         <th className="pb-2 pr-2">Fixed Cost</th>
-                        <th className="pb-2 pr-2">Driver account</th>
                         <th className="pb-2 w-8"></th>
                       </tr>
                     </thead>
@@ -167,18 +163,6 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
                           </td>
                           <td className="py-2 pr-2">
                             <input type="number" step="1" min="0" value={v.fixedCost} onChange={(e) => updateVehicle(v.id, 'fixedCost', Number(e.target.value))} className="w-24 border border-slate-300 rounded px-2 py-1" />
-                          </td>
-                          <td className="py-2 pr-2">
-                            <select
-                              value={v.driverUserId ?? ''}
-                              onChange={(e) => updateVehicle(v.id, 'driverUserId', e.target.value ? Number(e.target.value) : null)}
-                              className="w-full border border-slate-300 rounded px-2 py-1 bg-white"
-                            >
-                              <option value="">ยังไม่ระบุ</option>
-                              {drivers.map(d => (
-                                <option key={d.id} value={d.id}>{d.displayName}</option>
-                              ))}
-                            </select>
                           </td>
                           <td className="py-2 text-right">
                             <button onClick={() => removeVehicle(v.id)} className="text-slate-400 hover:text-alert-red">
