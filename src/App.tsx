@@ -26,7 +26,6 @@ export default function App() {
 
   const [pendingNodes, setPendingNodes] = useState<RouteNode[] | null>(null);
   const [isParamsModalOpen, setIsParamsModalOpen] = useState(false);
-  const [departureTimeStr, setDepartureTimeStr] = useState("08:00");
   const [optimizationCriterion, setOptimizationCriterion] = useState<OptimizationCriterion>('cost');
 
   const [comparisonData, setComparisonData] = useState<ComparisonResult[] | null>(null);
@@ -65,15 +64,6 @@ export default function App() {
     setCurrentStep(0);
     setStepState('pending');
 
-    const todayStr = new Date().toISOString().split('T')[0];
-    let startDateTime = new Date(`${todayStr} 08:00`);
-    if (departureTimeStr) {
-      const parts = departureTimeStr.split(':');
-      if (parts.length >= 2) {
-        startDateTime = new Date(`${todayStr} ${parts[0]}:${parts[1]}`);
-      }
-    }
-
     const variants: { algorithm: 'savings' | 'nearest-neighbor' | 'sweep' | 'or-opt-sa' | 'solomon-i1'; applyTwoOpt: boolean }[] = [
       { algorithm: 'savings', applyTwoOpt: false },
       { algorithm: 'savings', applyTwoOpt: true },
@@ -89,7 +79,6 @@ export default function App() {
     const baseParams = {
       fleetPool: activeFleetPool,
       avgSpeed,
-      startTime: startDateTime,
       driverWage: driverWaitingWage,
     };
 
@@ -298,17 +287,6 @@ export default function App() {
               </div>
 
               <div>
-                <label className="text-sm font-semibold text-slate-700 block mb-2">Departure Time (HH:MM)</label>
-                <input
-                  type="time"
-                  value={departureTimeStr}
-                  onChange={(e) => setDepartureTimeStr(e.target.value)}
-                  className="w-full border border-slate-300 rounded-lg px-4 py-2.5 text-lg font-bold text-slate-800 focus:ring-2 focus:ring-fleet-navy focus:outline-none"
-                  required
-                />
-              </div>
-
-              <div>
                 <label className="text-sm font-semibold text-slate-700 block mb-2">Optimize For</label>
                 <div className="flex gap-2">
                   {([
@@ -353,7 +331,7 @@ export default function App() {
               </button>
               <button
                 onClick={handleCompareAll}
-                disabled={!avgSpeed || avgSpeed <= 0 || !departureTimeStr}
+                disabled={!avgSpeed || avgSpeed <= 0}
                 className="px-5 py-2.5 rounded-lg text-sm font-bold bg-signal-green text-white hover:bg-signal-green-hover transition-colors shadow-sm shadow-signal-green/30 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 คำนวณเส้นทาง
