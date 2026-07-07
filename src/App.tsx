@@ -7,7 +7,7 @@ import DriverPortal from './components/DriverPortal';
 import StatisticsCar from './components/StatisticsCar';
 import AlgorithmComparison from './components/AlgorithmComparison';
 import ComparisonPopup from './components/ComparisonPopup';
-import { processData } from './lib/geo';
+import { processData, DEFAULT_FLEET_POOL } from './lib/geo';
 import { getFleet, saveActivePlan } from './lib/api';
 import { AlertCircle, Loader2, Menu } from 'lucide-react';
 import FleetConfigModal from './components/FleetConfigModal';
@@ -38,6 +38,8 @@ export default function App() {
     getFleet().then(fleet => {
       setActiveFleetPool(fleet.vehicles);
       setDriverWaitingWage(fleet.driverWage);
+    }).catch(() => {
+      setActiveFleetPool(DEFAULT_FLEET_POOL);
     });
   };
 
