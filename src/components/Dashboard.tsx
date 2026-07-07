@@ -2,6 +2,7 @@ import React from "react";
 import { ProcessedData } from "../types";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import RouteMap from "./RouteMap";
+import LiveDeliveryStatus from "./LiveDeliveryStatus";
 
 interface DashboardProps {
   data: ProcessedData;
@@ -26,6 +27,10 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
       </div>
 
       <RouteMap data={data} onViewAlgorithm={onViewAlgorithm} />
+
+      <div className="mt-8">
+        <LiveDeliveryStatus routeSummaries={data.routeSummaries} />
+      </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 mt-8">
         <Card>
