@@ -49,9 +49,6 @@ function PlannerApp({ onLogout }: { onLogout: () => void }) {
   const [isFleetConfigOpen, setIsFleetConfigOpen] = useState(false);
   const [avgSpeed, setAvgSpeed] = useState(50);
   const [driverWaitingWage, setDriverWaitingWage] = useState(60);
-  const [fuelPrice4W, setFuelPrice4W] = useState(35);
-  const [fuelPrice6W, setFuelPrice6W] = useState(35);
-  const [fuelPrice10W, setFuelPrice10W] = useState(35);
 
   const [pendingNodes, setPendingNodes] = useState<RouteNode[] | null>(null);
   const [isParamsModalOpen, setIsParamsModalOpen] = useState(false);
@@ -68,9 +65,6 @@ function PlannerApp({ onLogout }: { onLogout: () => void }) {
     getFleet().then(fleet => {
       setActiveFleetPool(fleet.vehicles);
       setDriverWaitingWage(fleet.driverWage);
-      setFuelPrice4W(fleet.fuelPrice4W);
-      setFuelPrice6W(fleet.fuelPrice6W);
-      setFuelPrice10W(fleet.fuelPrice10W);
     });
   };
 
@@ -123,9 +117,6 @@ function PlannerApp({ onLogout }: { onLogout: () => void }) {
       avgSpeed,
       startTime: startDateTime,
       driverWage: driverWaitingWage,
-      fuelPrice4W,
-      fuelPrice6W,
-      fuelPrice10W,
     };
 
     const labels: Record<string, string> = {
