@@ -111,6 +111,7 @@ export default function App() {
           milkRunDistance: d.milkRunDistance,
           milkRunCost: d.milkRunCost,
           milkRunCO2: d.milkRunCO2,
+          milkRunWaitingHours: d.totalWaitingHours,
           totalTrucksUsed: d.totalTrucksUsed,
         });
         variantData.push(d);
@@ -123,7 +124,7 @@ export default function App() {
     // preferring fewer time-window violations before cost/CO2/distance.
     const delayedCount = (d: ProcessedData) => d.legs.filter(l => l.status === 'Delayed').length;
     if (variantData.length > 0) {
-      const metricKey = optimizationCriterion === 'co2' ? 'milkRunCO2' : optimizationCriterion === 'distance' ? 'milkRunDistance' : 'milkRunCost';
+      const metricKey = optimizationCriterion === 'co2' ? 'milkRunCO2' : optimizationCriterion === 'distance' ? 'milkRunDistance' : optimizationCriterion === 'waiting' ? 'milkRunWaitingHours' : 'milkRunCost';
       const bestIdx = comparison.reduce((bi, c, i) => {
         const biDelayed = delayedCount(variantData[bi]);
         const iDelayed = delayedCount(variantData[i]);
@@ -298,6 +299,7 @@ export default function App() {
                     { value: 'cost', label: 'Min Cost' },
                     { value: 'co2', label: 'Min CO2' },
                     { value: 'distance', label: 'Min Distance' },
+                    { value: 'waiting', label: 'Min Waiting' },
                   ] as { value: OptimizationCriterion; label: string }[]).map(({ value, label }) => (
                     <label
                       key={value}
