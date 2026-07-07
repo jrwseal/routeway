@@ -359,7 +359,7 @@ export default function DriverPortal({
                           {leg.arrivalDate
                             ? format(leg.arrivalDate, "HH:mm")
                             : "N/A"}
-                          {leg.waitingMinutes > 0 &&
+                          {Math.round(leg.waitingMinutes) > 0 &&
                             ` • รอ ${Math.round(leg.waitingMinutes)} นาที`}
                         </div>
                       </div>
