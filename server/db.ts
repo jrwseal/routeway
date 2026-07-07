@@ -88,20 +88,27 @@ export function createDb(path: string): DatabaseSync {
   const vehicleColumns = db.prepare('PRAGMA table_info(vehicles)').all() as { name: string }[];
   const hasFuelPriceColumn = vehicleColumns.some((c) => c.name === 'fuel_price');
   if (!hasFuelPriceColumn) {
-    db.exec('ALTER TABLE vehicles ADD COLUMN fuel_price REAL NOT NULL DEFAULT 35');
-    const settingsRow = db.prepare('SELECT * FROM settings WHERE id = 1').get() as {
-      fuel_price_4w: number;
-      fuel_price_6w: number;
-      fuel_price_10w: number;
-    };
-    const priceForType = (type: string) =>
-      type === '4-wheel' ? settingsRow.fuel_price_4w :
-      type === '6-wheel' ? settingsRow.fuel_price_6w :
-      settingsRow.fuel_price_10w;
-    const existingVehicles = db.prepare('SELECT id, type FROM vehicles').all() as { id: string; type: string }[];
-    const updatePrice = db.prepare('UPDATE vehicles SET fuel_price = ? WHERE id = ?');
-    for (const v of existingVehicles) {
-      updatePrice.run(priceForType(v.type), v.id);
+    db.exec('BEGIN');
+    try {
+      db.exec('ALTER TABLE vehicles ADD COLUMN fuel_price REAL NOT NULL DEFAULT 35');
+      const settingsRow = db.prepare('SELECT * FROM settings WHERE id = 1').get() as {
+        fuel_price_4w: number;
+        fuel_price_6w: number;
+        fuel_price_10w: number;
+      };
+      const priceForType = (type: string) =>
+        type === '4-wheel' ? settingsRow.fuel_price_4w :
+        type === '6-wheel' ? settingsRow.fuel_price_6w :
+        settingsRow.fuel_price_10w;
+      const existingVehicles = db.prepare('SELECT id, type FROM vehicles').all() as { id: string; type: string }[];
+      const updatePrice = db.prepare('UPDATE vehicles SET fuel_price = ? WHERE id = ?');
+      for (const v of existingVehicles) {
+        updatePrice.run(priceForType(v.type), v.id);
+      }
+      db.exec('COMMIT');
+    } catch (err) {
+      db.exec('ROLLBACK');
+      throw err;
     }
   }
 
