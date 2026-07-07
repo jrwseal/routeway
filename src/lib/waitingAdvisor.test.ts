@@ -24,6 +24,7 @@ const vehicle = {
   fuelConsumption: 0.12,
   fixedCost: 300,
   color: '#10B981',
+  fuelPrice: 35,
 };
 
 const departureTime = new Date('2026-07-07T08:00:00.000Z');

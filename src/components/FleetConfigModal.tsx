@@ -19,14 +19,12 @@ const TYPE_COLORS: Record<string, string> = {
   '6-wheel': '#3B82F6',
   '10-wheel': '#F97316',
 };
+const VEHICLE_TYPES = ['4-wheel', '6-wheel', '10-wheel'];
 
 export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConfigModalProps) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [drivers, setDrivers] = useState<DriverAccount[]>([]);
   const [driverWage, setDriverWage] = useState(60);
-  const [fuelPrice4W, setFuelPrice4W] = useState(35);
-  const [fuelPrice6W, setFuelPrice6W] = useState(35);
-  const [fuelPrice10W, setFuelPrice10W] = useState(35);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -35,9 +33,6 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
     Promise.all([getFleet(), listDrivers()]).then(([fleet, driverList]) => {
       setVehicles(fleet.vehicles);
       setDriverWage(fleet.driverWage);
-      setFuelPrice4W(fleet.fuelPrice4W);
-      setFuelPrice6W(fleet.fuelPrice6W);
-      setFuelPrice10W(fleet.fuelPrice10W);
       setDrivers(driverList);
       setIsLoading(false);
     });
@@ -47,6 +42,10 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
 
   const updateVehicle = (id: string, field: keyof Vehicle, value: number | string | null) => {
     setVehicles(prev => prev.map(v => v.id === id ? { ...v, [field]: value } : v));
+  };
+
+  const updateVehicleType = (id: string, type: string) => {
+    setVehicles(prev => prev.map(v => v.id === id ? { ...v, type, color: TYPE_COLORS[type] } : v));
   };
 
   const addVehicle = (type: string) => {
@@ -60,6 +59,7 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
       fixedCost: type === '4-wheel' ? 300 : type === '6-wheel' ? 450 : 600,
       color: TYPE_COLORS[type],
       driverUserId: null,
+      fuelPrice: 35,
     }]);
   };
 
@@ -68,94 +68,15 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
   };
 
   const handleSave = async () => {
-    await saveFleet({ vehicles, driverWage, fuelPrice4W, fuelPrice6W, fuelPrice10W });
+    await saveFleet({ vehicles, driverWage });
     onSaved();
     onClose();
   };
 
-  const fuelPriceFor = (type: string) => type === '4-wheel' ? fuelPrice4W : type === '6-wheel' ? fuelPrice6W : fuelPrice10W;
-  const setFuelPriceFor = (type: string) => type === '4-wheel' ? setFuelPrice4W : type === '6-wheel' ? setFuelPrice6W : setFuelPrice10W;
-
-  const renderVehicleSection = (type: string) => {
-    const rows = vehicles.filter(v => v.type === type);
-    return (
-      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
-        <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
-          <div className="flex items-center">
-            <Truck className="w-5 h-5 mr-2" style={{ color: TYPE_COLORS[type] }} />
-            <h3 className="font-bold text-lg text-slate-800">{TYPE_LABELS[type]}</h3>
-          </div>
-          <div className="flex items-center">
-            <span className="text-sm font-bold text-slate-700 mr-2">⛽</span>
-            <input
-              type="number" min="0" step="0.01"
-              value={fuelPriceFor(type)}
-              onChange={(e) => setFuelPriceFor(type)(Number(e.target.value))}
-              className="w-16 border border-slate-300 rounded px-2 py-1 text-sm text-center font-bold"
-            />
-            <span className="text-xs text-slate-600 ml-1">บาท/ลิตร</span>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-slate-500 uppercase">
-                <th className="pb-2 pr-2">ชื่อรถ</th>
-                <th className="pb-2 pr-2">Capacity (CBM)</th>
-                <th className="pb-2 pr-2">Fuel (L/km)</th>
-                <th className="pb-2 pr-2">Fixed Cost</th>
-                <th className="pb-2 pr-2">Driver account</th>
-                <th className="pb-2 w-8"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map(v => (
-                <tr key={v.id} className="border-t border-slate-100">
-                  <td className="py-2 pr-2">
-                    <input value={v.name} onChange={(e) => updateVehicle(v.id, 'name', e.target.value)} className="w-full border border-slate-300 rounded px-2 py-1" />
-                  </td>
-                  <td className="py-2 pr-2">
-                    <input type="number" step="0.1" value={v.capacityCBM} onChange={(e) => updateVehicle(v.id, 'capacityCBM', Number(e.target.value))} className="w-20 border border-slate-300 rounded px-2 py-1" />
-                  </td>
-                  <td className="py-2 pr-2">
-                    <input type="number" step="0.01" value={v.fuelConsumption} onChange={(e) => updateVehicle(v.id, 'fuelConsumption', Number(e.target.value))} className="w-20 border border-slate-300 rounded px-2 py-1" />
-                  </td>
-                  <td className="py-2 pr-2">
-                    <input type="number" step="1" min="0" value={v.fixedCost} onChange={(e) => updateVehicle(v.id, 'fixedCost', Number(e.target.value))} className="w-24 border border-slate-300 rounded px-2 py-1" />
-                  </td>
-                  <td className="py-2 pr-2">
-                    <select
-                      value={v.driverUserId ?? ''}
-                      onChange={(e) => updateVehicle(v.id, 'driverUserId', e.target.value ? Number(e.target.value) : null)}
-                      className="w-full border border-slate-300 rounded px-2 py-1 bg-white"
-                    >
-                      <option value="">ยังไม่ระบุ</option>
-                      {drivers.map(d => (
-                        <option key={d.id} value={d.id}>{d.displayName}</option>
-                      ))}
-                    </select>
-                  </td>
-                  <td className="py-2 text-right">
-                    <button onClick={() => removeVehicle(v.id)} className="text-slate-400 hover:text-alert-red">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        <button
-          onClick={() => addVehicle(type)}
-          className="mt-3 flex items-center text-sm font-bold text-fleet-navy hover:underline"
-        >
-          <Plus className="w-4 h-4 mr-1" /> เพิ่มรถ
-        </button>
-      </div>
-    );
-  };
+  const sortedVehicles = [...vehicles].sort((a, b) => {
+    const typeOrder = VEHICLE_TYPES.indexOf(a.type) - VEHICLE_TYPES.indexOf(b.type);
+    return typeOrder !== 0 ? typeOrder : a.name.localeCompare(b.name);
+  });
 
   return (
     <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -185,10 +106,90 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
                 <span className="font-bold text-slate-700 text-lg ml-3">บาท / ชั่วโมง</span>
               </div>
 
-              <div className="grid grid-cols-1 gap-6">
-                {renderVehicleSection('4-wheel')}
-                {renderVehicleSection('6-wheel')}
-                {renderVehicleSection('10-wheel')}
+              <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+                <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
+                  <div className="flex items-center">
+                    <Truck className="w-5 h-5 mr-2 text-fleet-navy" />
+                    <h3 className="font-bold text-lg text-slate-800">รายการยานพาหนะ</h3>
+                  </div>
+                  <div className="flex gap-2">
+                    {VEHICLE_TYPES.map(type => (
+                      <button
+                        key={type}
+                        onClick={() => addVehicle(type)}
+                        className="flex items-center text-xs font-bold text-fleet-navy hover:underline"
+                      >
+                        <Plus className="w-3 h-3 mr-1" /> {TYPE_LABELS[type]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-left text-xs text-slate-500 uppercase">
+                        <th className="pb-2 pr-2">ประเภท</th>
+                        <th className="pb-2 pr-2">ชื่อรถ</th>
+                        <th className="pb-2 pr-2">Capacity (CBM)</th>
+                        <th className="pb-2 pr-2">Fuel (L/km)</th>
+                        <th className="pb-2 pr-2">ราคาน้ำมัน (บาท/ลิตร)</th>
+                        <th className="pb-2 pr-2">Fixed Cost</th>
+                        <th className="pb-2 pr-2">Driver account</th>
+                        <th className="pb-2 w-8"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {sortedVehicles.map(v => (
+                        <tr key={v.id} className="border-t border-slate-100">
+                          <td className="py-2 pr-2">
+                            <select
+                              value={v.type}
+                              onChange={(e) => updateVehicleType(v.id, e.target.value)}
+                              className="border border-slate-300 rounded px-2 py-1 bg-white"
+                            >
+                              {VEHICLE_TYPES.map(type => (
+                                <option key={type} value={type}>{TYPE_LABELS[type]}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="py-2 pr-2">
+                            <input value={v.name} onChange={(e) => updateVehicle(v.id, 'name', e.target.value)} className="w-full border border-slate-300 rounded px-2 py-1" />
+                          </td>
+                          <td className="py-2 pr-2">
+                            <input type="number" step="0.1" value={v.capacityCBM} onChange={(e) => updateVehicle(v.id, 'capacityCBM', Number(e.target.value))} className="w-20 border border-slate-300 rounded px-2 py-1" />
+                          </td>
+                          <td className="py-2 pr-2">
+                            <input type="number" step="0.01" value={v.fuelConsumption} onChange={(e) => updateVehicle(v.id, 'fuelConsumption', Number(e.target.value))} className="w-20 border border-slate-300 rounded px-2 py-1" />
+                          </td>
+                          <td className="py-2 pr-2">
+                            <input type="number" step="0.01" min="0" value={v.fuelPrice} onChange={(e) => updateVehicle(v.id, 'fuelPrice', Number(e.target.value))} className="w-20 border border-slate-300 rounded px-2 py-1" />
+                          </td>
+                          <td className="py-2 pr-2">
+                            <input type="number" step="1" min="0" value={v.fixedCost} onChange={(e) => updateVehicle(v.id, 'fixedCost', Number(e.target.value))} className="w-24 border border-slate-300 rounded px-2 py-1" />
+                          </td>
+                          <td className="py-2 pr-2">
+                            <select
+                              value={v.driverUserId ?? ''}
+                              onChange={(e) => updateVehicle(v.id, 'driverUserId', e.target.value ? Number(e.target.value) : null)}
+                              className="w-full border border-slate-300 rounded px-2 py-1 bg-white"
+                            >
+                              <option value="">ยังไม่ระบุ</option>
+                              {drivers.map(d => (
+                                <option key={d.id} value={d.id}>{d.displayName}</option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="py-2 text-right">
+                            <button onClick={() => removeVehicle(v.id)} className="text-slate-400 hover:text-alert-red">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </>
           )}
