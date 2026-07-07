@@ -175,6 +175,11 @@ export async function getRoute(
   }
 }
 
+export function parseVehicleTime(timeStr: string, todayStr = new Date().toISOString().split('T')[0]): Date {
+  const [h, m] = (timeStr || '08:00').split(':');
+  return new Date(`${todayStr} ${(h ?? '08').padStart(2, '0')}:${(m ?? '00').padStart(2, '0')}`);
+}
+
 export async function processData(
   nodes: RouteNode[],
   paramsWithoutStartTime: Omit<ProcessingParams, 'startTime'>,
@@ -182,17 +187,14 @@ export async function processData(
   const depot = nodes[0];
 
   const todayStr = new Date().toISOString().split('T')[0];
-  const parseVehicleTime = (timeStr: string) => {
-    const [h, m] = timeStr.split(':');
-    return new Date(`${todayStr} ${(h ?? '08').padStart(2, '0')}:${(m ?? '00').padStart(2, '0')}`);
-  };
+  const parseVehicleTimeToday = (timeStr: string) => parseVehicleTime(timeStr, todayStr);
   const earliestDepartureTime = paramsWithoutStartTime.fleetPool.length > 0
     ? paramsWithoutStartTime.fleetPool.reduce(
         (min, v) => {
-          const t = parseVehicleTime(v.departureTime);
+          const t = parseVehicleTimeToday(v.departureTime);
           return t < min ? t : min;
         },
-        parseVehicleTime(paramsWithoutStartTime.fleetPool[0].departureTime),
+        parseVehicleTimeToday(paramsWithoutStartTime.fleetPool[0].departureTime),
       )
     : new Date(`${todayStr} 08:00`);
 
@@ -294,7 +296,7 @@ export async function processData(
       if (vIndex !== -1) availableFleet.splice(vIndex, 1);
     }
 
-    let currentTime = parseVehicleTime(assignedVehicle.departureTime);
+    let currentTime = parseVehicleTimeToday(assignedVehicle.departureTime);
     let currentLoc = depot;
     let routeDistance = 0;
     let routeWaitingMinutes = 0;
