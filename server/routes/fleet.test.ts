@@ -20,7 +20,7 @@ describe('fleet routes', () => {
   it('saves an edited fleet', async () => {
     const putRes = await request(app).put('/api/fleet').send({
       vehicles: [
-        { id: '4w-1', type: '4-wheel', name: 'Truck 1', capacityCBM: 12, fuelConsumption: 0.12, fixedCost: 300, color: '#10B981', fuelPrice: 36 },
+        { id: '4w-1', type: '4-wheel', name: 'Truck 1', capacityCBM: 12, fuelConsumption: 0.12, fixedCost: 300, color: '#10B981', fuelPrice: 36, departureTime: '09:30' },
       ],
       driverWage: 70,
     });
@@ -29,6 +29,7 @@ describe('fleet routes', () => {
     const getRes = await request(app).get('/api/fleet');
     expect(getRes.body.vehicles).toHaveLength(1);
     expect(getRes.body.vehicles[0].fuelPrice).toBe(36);
+    expect(getRes.body.vehicles[0].departureTime).toBe('09:30');
     expect(getRes.body.driverWage).toBe(70);
   });
 });
