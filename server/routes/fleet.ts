@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import type { DatabaseSync } from 'node:sqlite';
+import type { Client } from '@libsql/client';
 
 interface VehicleRow {
   id: string;
@@ -17,12 +17,14 @@ interface SettingsRow {
   driver_wage: number;
 }
 
-export function fleetRouter(db: DatabaseSync): Router {
+export function fleetRouter(db: Client): Router {
   const router = Router();
 
-  router.get('/', (req, res) => {
-    const rows = db.prepare('SELECT * FROM vehicles ORDER BY type, id').all() as unknown as VehicleRow[];
-    const settings = db.prepare('SELECT * FROM settings WHERE id = 1').get() as unknown as SettingsRow;
+  router.get('/', async (req, res) => {
+    const rowsResult = await db.execute('SELECT * FROM vehicles ORDER BY type, id');
+    const settingsResult = await db.execute('SELECT * FROM settings WHERE id = 1');
+    const rows = rowsResult.rows as unknown as VehicleRow[];
+    const settings = settingsResult.rows[0] as unknown as SettingsRow;
     res.json({
       vehicles: rows.map(r => ({
         id: r.id,
@@ -39,7 +41,7 @@ export function fleetRouter(db: DatabaseSync): Router {
     });
   });
 
-  router.put('/', (req, res) => {
+  router.put('/', async (req, res) => {
     const { vehicles, driverWage } = req.body ?? {};
     if (!Array.isArray(vehicles)) {
       res.status(400).json({ error: 'vehicles must be an array' });
@@ -52,21 +54,14 @@ export function fleetRouter(db: DatabaseSync): Router {
       }
     }
 
-    db.exec('BEGIN');
-    try {
-      db.prepare('DELETE FROM vehicles').run();
-      const insert = db.prepare(
-        'INSERT INTO vehicles (id, type, name, capacity_cbm, fuel_consumption, fixed_cost, color, fuel_price, departure_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)'
-      );
-      for (const v of vehicles) {
-        insert.run(v.id, v.type, v.name, v.capacityCBM, v.fuelConsumption, v.fixedCost, v.color, v.fuelPrice, v.departureTime);
-      }
-      db.prepare('UPDATE settings SET driver_wage = ? WHERE id = 1').run(driverWage ?? 60);
-      db.exec('COMMIT');
-    } catch (err) {
-      db.exec('ROLLBACK');
-      throw err;
-    }
+    await db.batch([
+      { sql: 'DELETE FROM vehicles', args: [] },
+      ...vehicles.map((v: any) => ({
+        sql: 'INSERT INTO vehicles (id, type, name, capacity_cbm, fuel_consumption, fixed_cost, color, fuel_price, departure_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        args: [v.id, v.type, v.name, v.capacityCBM, v.fuelConsumption, v.fixedCost, v.color, v.fuelPrice, v.departureTime],
+      })),
+      { sql: 'UPDATE settings SET driver_wage = ? WHERE id = 1', args: [driverWage ?? 60] },
+    ], 'write');
 
     res.json({ ok: true });
   });
