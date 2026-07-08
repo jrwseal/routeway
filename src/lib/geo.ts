@@ -230,6 +230,15 @@ export async function processData(
     return suitable[0];
   };
 
+  // Same as getSmallestVehicle, but restricted to cold-storage vehicles for nodes that require one
+  const getBaselineVehicle = (node: RouteNode) => {
+    const vol = isNaN(node.demandVolume) ? 0 : node.demandVolume;
+    const eligible = node.requiresColdStorage
+      ? params.fleetPool.filter((v) => v.type === 'cold-storage')
+      : [...params.fleetPool];
+    return getSmallestVehicle(vol, eligible.length > 0 ? eligible : [...params.fleetPool]);
+  };
+
   let traditionalCost = 0;
 
   // Calculate traditional back-and-forth distance and CO2
@@ -242,7 +251,7 @@ export async function processData(
     totalVolume += vol;
     totalWeight += node.weight || 0;
 
-    const baselineVehicle = getSmallestVehicle(vol, [...params.fleetPool]);
+    const baselineVehicle = getBaselineVehicle(node);
     traditionalCO2 +=
       (2621 * baselineVehicle.fuelConsumption * roundTripDist) / 1000;
 
@@ -261,26 +270,153 @@ export async function processData(
       baselineVehicle.fixedCost;
   }
 
-  // 1. BUILD ROUTES via selected algorithm
-  function buildRoutes(): number[][] {
-    switch (params.algorithm) {
-      case 'nearest-neighbor': return nearestNeighbor(nodes, params);
-      case 'sweep': return sweep(nodes, params);
-      case 'or-opt-sa': return orOptAnnealing(nodes, params);
-      case 'solomon-i1': return solomonI1(nodes, params);
-      default: return clarkWrightSavings(nodes, params);
+  // 1-3. PARTITIONED ROUTE-BUILD + BEST-FIT ASSIGNMENT
+  // Cold-required stops are routed as their own group, restricted to cold-storage
+  // vehicles for both the capacity ceiling used during route construction and for
+  // vehicle assignment. Regular stops are routed exactly as before. Both groups
+  // draw from one shared, mutable `availableFleet` so a vehicle is never double-booked
+  // across groups.
+  async function processGroup(
+    groupNodes: RouteNode[],
+    groupParams: ProcessingParams,
+    availableFleet: Vehicle[],
+    startRouteIndex: number,
+  ): Promise<{
+    legs: RouteLeg[];
+    summaries: RouteSummary[];
+    distance: number;
+    co2: number;
+    cost: number;
+    waitingMinutes: number;
+    nextRouteIndex: number;
+  }> {
+    const groupDepot = groupNodes[0];
+
+    function buildGroupRoutes(): number[][] {
+      switch (groupParams.algorithm) {
+        case 'nearest-neighbor': return nearestNeighbor(groupNodes, groupParams);
+        case 'sweep': return sweep(groupNodes, groupParams);
+        case 'or-opt-sa': return orOptAnnealing(groupNodes, groupParams);
+        case 'solomon-i1': return solomonI1(groupNodes, groupParams);
+        default: return clarkWrightSavings(groupNodes, groupParams);
+      }
     }
+
+    let routes = buildGroupRoutes();
+    if (groupParams.applyTwoOpt) {
+      routes = routes.map((r) => twoOptFeasible(r, groupNodes, groupParams));
+    }
+
+    const legs: RouteLeg[] = [];
+    const summaries: RouteSummary[] = [];
+    let distance = 0;
+    let co2 = 0;
+    let cost = 0;
+    let waitingMinutes = 0;
+    let routeIndex = startRouteIndex;
+
+    for (const routeSeq of routes) {
+      let routeVolume = 0;
+      for (const idx of routeSeq) {
+        routeVolume += isNaN(groupNodes[idx].demandVolume) ? 0 : groupNodes[idx].demandVolume;
+      }
+
+      const assignedVehicle = selectVehicleForRoute(routeVolume, availableFleet, groupParams.fleetPool);
+      const vIndex = availableFleet.findIndex((v) => v.id === assignedVehicle.id);
+      if (vIndex !== -1) availableFleet.splice(vIndex, 1);
+
+      let currentTime = parseVehicleTimeToday(assignedVehicle.departureTime);
+      let currentLoc = groupDepot;
+      let routeDistance = 0;
+      let routeWaitingMinutes = 0;
+
+      for (const idx of routeSeq) {
+        const node = groupNodes[idx];
+        const routeRes = await getRoute(
+          [currentLoc.lon, currentLoc.lat],
+          [node.lon, node.lat],
+          groupParams.avgSpeed,
+        );
+
+        routeDistance += routeRes.distance;
+        const arrivalTime = addSeconds(currentTime, routeRes.duration);
+
+        let waitingMin = 0;
+        let departureTime = arrivalTime;
+        if (node.readyTime && isBefore(arrivalTime, node.readyTime)) {
+          waitingMin = (node.readyTime.getTime() - arrivalTime.getTime()) / 60000;
+          departureTime = node.readyTime;
+        }
+        routeWaitingMinutes += waitingMin;
+        waitingMinutes += waitingMin;
+
+        let status: 'On-Time' | 'Delayed' | 'N/A' = 'N/A';
+        if (node.dueTime) {
+          status = arrivalTime.getTime() > node.dueTime.getTime() ? 'Delayed' : 'On-Time';
+        }
+
+        legs.push({
+          fromNode: currentLoc,
+          toNode: node,
+          distanceKm: routeRes.distance,
+          durationSec: routeRes.duration,
+          arrivalDate: arrivalTime,
+          waitingMinutes: waitingMin,
+          status,
+          geometry: routeRes.geometry,
+          routeIndex,
+        });
+
+        currentTime = addSeconds(departureTime, 30 * 60);
+        currentLoc = node;
+      }
+
+      const returnRoute = await getRoute(
+        [currentLoc.lon, currentLoc.lat],
+        [groupDepot.lon, groupDepot.lat],
+        groupParams.avgSpeed,
+      );
+      routeDistance += returnRoute.distance;
+
+      legs.push({
+        fromNode: currentLoc,
+        toNode: groupDepot,
+        distanceKm: returnRoute.distance,
+        durationSec: returnRoute.duration,
+        arrivalDate: null,
+        waitingMinutes: 0,
+        status: 'N/A',
+        geometry: returnRoute.geometry,
+        isReturnToDepot: true,
+        routeIndex,
+      });
+
+      distance += routeDistance;
+      const routeCO2 = (2621 * assignedVehicle.fuelConsumption * routeDistance) / 1000;
+      co2 += routeCO2;
+      cost +=
+        routeDistance * assignedVehicle.fuelConsumption * assignedVehicle.fuelPrice +
+        (routeWaitingMinutes / 60) * groupParams.driverWage +
+        assignedVehicle.fixedCost;
+
+      summaries.push({
+        routeIndex,
+        totalVolume: routeVolume,
+        volumeUtilization: (routeVolume / assignedVehicle.capacityCBM) * 100,
+        distanceKm: routeDistance,
+        vehicle: assignedVehicle,
+      });
+
+      routeIndex++;
+    }
+
+    return { legs, summaries, distance, co2, cost, waitingMinutes, nextRouteIndex: routeIndex };
   }
 
-  let routes = buildRoutes();
-  if (params.applyTwoOpt) {
-    routes = routes.map(r => twoOptFeasible(r, nodes, params));
-  }
+  const coldCustomers = nodes.slice(1).filter((n) => n.requiresColdStorage);
+  const regularCustomers = nodes.slice(1).filter((n) => !n.requiresColdStorage);
 
-  // 3. BEST-FIT / GREEN FLEET SELECTION & CO2 CALCULATION
-  let availableFleet = [...params.fleetPool].sort(
-    (a, b) => a.capacityCBM - b.capacityCBM,
-  );
+  const availableFleet = [...params.fleetPool].sort((a, b) => a.capacityCBM - b.capacityCBM);
 
   let milkRunDistance = 0;
   let milkRunCO2 = 0;
@@ -290,117 +426,30 @@ export async function processData(
   const routeSummaries: RouteSummary[] = [];
   let routeIndex = 1;
 
-  for (const routeSeq of routes) {
-    let routeVolume = 0;
-    for (const idx of routeSeq) {
-      routeVolume += isNaN(nodes[idx].demandVolume)
-        ? 0
-        : nodes[idx].demandVolume;
-    }
+  if (coldCustomers.length > 0) {
+    const coldParams: ProcessingParams = {
+      ...params,
+      fleetPool: params.fleetPool.filter((v) => v.type === 'cold-storage'),
+    };
+    const result = await processGroup([depot, ...coldCustomers], coldParams, availableFleet, routeIndex);
+    globalLegs.push(...result.legs);
+    routeSummaries.push(...result.summaries);
+    milkRunDistance += result.distance;
+    milkRunCO2 += result.co2;
+    milkRunCost += result.cost;
+    totalWaitingMinutes += result.waitingMinutes;
+    routeIndex = result.nextRouteIndex;
+  }
 
-    let assignedVehicle = availableFleet.find(
-      (v) => v.capacityCBM >= routeVolume,
-    );
-    if (!assignedVehicle) {
-      assignedVehicle = getSmallestVehicle(routeVolume, [...params.fleetPool]);
-    } else {
-      const vIndex = availableFleet.findIndex(
-        (v) => v.id === assignedVehicle.id,
-      );
-      if (vIndex !== -1) availableFleet.splice(vIndex, 1);
-    }
-
-    let currentTime = parseVehicleTimeToday(assignedVehicle.departureTime);
-    let currentLoc = depot;
-    let routeDistance = 0;
-    let routeWaitingMinutes = 0;
-
-    for (const idx of routeSeq) {
-      const node = nodes[idx];
-      const routeRes = await getRoute(
-        [currentLoc.lon, currentLoc.lat],
-        [node.lon, node.lat],
-        params.avgSpeed,
-      );
-
-      routeDistance += routeRes.distance;
-      const arrivalTime = addSeconds(currentTime, routeRes.duration);
-
-      let waitingMinutes = 0;
-      let departureTime = arrivalTime;
-      if (node.readyTime && isBefore(arrivalTime, node.readyTime)) {
-        waitingMinutes =
-          (node.readyTime.getTime() - arrivalTime.getTime()) / 60000;
-        departureTime = node.readyTime;
-      }
-      routeWaitingMinutes += waitingMinutes;
-      totalWaitingMinutes += waitingMinutes;
-
-      let status: "On-Time" | "Delayed" | "N/A" = "N/A";
-      if (node.dueTime) {
-        if (arrivalTime.getTime() > node.dueTime.getTime()) {
-          status = "Delayed";
-        } else {
-          status = "On-Time";
-        }
-      }
-
-      globalLegs.push({
-        fromNode: currentLoc,
-        toNode: node,
-        distanceKm: routeRes.distance,
-        durationSec: routeRes.duration,
-        arrivalDate: arrivalTime,
-        waitingMinutes,
-        status,
-        geometry: routeRes.geometry,
-        routeIndex,
-      });
-
-      currentTime = addSeconds(departureTime, 30 * 60);
-      currentLoc = node;
-    }
-
-    const returnRoute = await getRoute(
-      [currentLoc.lon, currentLoc.lat],
-      [depot.lon, depot.lat],
-      params.avgSpeed,
-    );
-    routeDistance += returnRoute.distance;
-
-    globalLegs.push({
-      fromNode: currentLoc,
-      toNode: depot,
-      distanceKm: returnRoute.distance,
-      durationSec: returnRoute.duration,
-      arrivalDate: null,
-      waitingMinutes: 0,
-      status: "N/A",
-      geometry: returnRoute.geometry,
-      isReturnToDepot: true,
-      routeIndex,
-    });
-
-    milkRunDistance += routeDistance;
-    const routeCO2 =
-      (2621 * assignedVehicle.fuelConsumption * routeDistance) / 1000;
-    milkRunCO2 += routeCO2;
-    milkRunCost +=
-      routeDistance *
-        assignedVehicle.fuelConsumption *
-        assignedVehicle.fuelPrice +
-      (routeWaitingMinutes / 60) * params.driverWage +
-      assignedVehicle.fixedCost;
-
-    routeSummaries.push({
-      routeIndex,
-      totalVolume: routeVolume,
-      volumeUtilization: (routeVolume / assignedVehicle.capacityCBM) * 100,
-      distanceKm: routeDistance,
-      vehicle: assignedVehicle,
-    });
-
-    routeIndex++;
+  if (regularCustomers.length > 0) {
+    const result = await processGroup([depot, ...regularCustomers], params, availableFleet, routeIndex);
+    globalLegs.push(...result.legs);
+    routeSummaries.push(...result.summaries);
+    milkRunDistance += result.distance;
+    milkRunCO2 += result.co2;
+    milkRunCost += result.cost;
+    totalWaitingMinutes += result.waitingMinutes;
+    routeIndex = result.nextRouteIndex;
   }
 
   // 4. UI METRICS SYNCHRONIZATION
@@ -423,8 +472,7 @@ export async function processData(
 
   let traditionalFuel = 0;
   for (let i = 1; i < nodes.length; i++) {
-    const vol = isNaN(nodes[i].demandVolume) ? 0 : nodes[i].demandVolume;
-    const v = getSmallestVehicle(vol, [...params.fleetPool]);
+    const v = getBaselineVehicle(nodes[i]);
     traditionalFuel +=
       getFallbackDist([depot.lon, depot.lat], [nodes[i].lon, nodes[i].lat]) *
       2 *
