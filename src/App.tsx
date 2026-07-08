@@ -7,6 +7,8 @@ import DriverPortal from './components/DriverPortal';
 import StatisticsCar from './components/StatisticsCar';
 import AlgorithmComparison from './components/AlgorithmComparison';
 import ComparisonPopup from './components/ComparisonPopup';
+import LoginMockup from './components/LoginMockup';
+import AppLogo from './components/AppLogo';
 import { processData, DEFAULT_FLEET_POOL } from './lib/geo';
 import { getFleet, saveActivePlan } from './lib/api';
 import { validateColdStorageFleet } from './lib/coldStorageValidation';
@@ -14,6 +16,7 @@ import { AlertCircle, Loader2, Menu } from 'lucide-react';
 import FleetConfigModal from './components/FleetConfigModal';
 
 export default function App() {
+  const [isSignedIn, setIsSignedIn] = useState(false);
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
@@ -169,11 +172,15 @@ export default function App() {
     }
   };
 
+  if (!isSignedIn) {
+    return <LoginMockup onSignIn={() => setIsSignedIn(true)} />;
+  }
+
   return (
     <div className="flex flex-col lg:flex-row h-screen w-full bg-neutral-canvas overflow-hidden font-sans">
       {/* Mobile top bar */}
       <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white flex-shrink-0">
-        <span className="text-lg font-bold text-fleet-navy">RouteWay</span>
+        <AppLogo className="w-28" />
         <button
           type="button"
           onClick={() => setIsMobileNavOpen(true)}

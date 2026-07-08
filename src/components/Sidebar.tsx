@@ -3,6 +3,7 @@ import { RouteNode, ProcessedData } from '../types';
 import { Truck, Navigation, Leaf, UploadCloud, Info, BarChart, X } from 'lucide-react';
 import Papa from 'papaparse';
 import { parse } from 'date-fns';
+import AppLogo from './AppLogo';
 
 interface SidebarProps {
   currentTab: string;
@@ -115,10 +116,7 @@ export default function Sidebar({
           ${isMobileNavOpen ? 'translate-x-0' : '-translate-x-full'}`}
       >
         <div className="px-6 mb-8 flex items-start justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-fleet-navy">RouteWay</h1>
-            <p className="text-sm font-medium text-slate-500 uppercase tracking-widest mt-1">Logistics Intelligence</p>
-          </div>
+          <AppLogo className="w-40 rounded-md bg-white px-2 py-1 shadow-sm ring-1 ring-slate-200" />
           <button
             type="button"
             onClick={onCloseMobileNav}
