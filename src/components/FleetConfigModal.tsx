@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Vehicle } from '../types';
 import { getFleet, saveFleet } from '../lib/api';
 import { Truck, Plus, Trash2, Save, X } from 'lucide-react';
+import { VEHICLE_TYPE_DEFS, getAvailableVehicleTypes, canDisableColdStorage } from '../lib/fleetTypes';
 
 interface FleetConfigModalProps {
   isOpen: boolean;
@@ -9,21 +10,10 @@ interface FleetConfigModalProps {
   onSaved: () => void;
 }
 
-const TYPE_LABELS: Record<string, string> = {
-  '4-wheel': 'รถบรรทุก 4 ล้อใหญ่',
-  '6-wheel': 'รถบรรทุก 6 ล้อ',
-  '10-wheel': 'รถบรรทุก 10 ล้อ',
-};
-const TYPE_COLORS: Record<string, string> = {
-  '4-wheel': '#10B981',
-  '6-wheel': '#3B82F6',
-  '10-wheel': '#F97316',
-};
-const VEHICLE_TYPES = ['4-wheel', '6-wheel', '10-wheel'];
-
 export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConfigModalProps) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [driverWage, setDriverWage] = useState(60);
+  const [enableColdStorage, setEnableColdStorage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -32,6 +22,7 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
     getFleet().then(fleet => {
       setVehicles(fleet.vehicles);
       setDriverWage(fleet.driverWage);
+      setEnableColdStorage(fleet.enableColdStorage);
       setIsLoading(false);
     });
   }, [isOpen]);
@@ -42,23 +33,25 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
     setVehicles(prev => prev.map(v => v.id === id ? { ...v, [field]: value } : v));
   };
 
-  const updateVehicleType = (id: string, type: string) => {
-    setVehicles(prev => prev.map(v => v.id === id ? { ...v, type, color: TYPE_COLORS[type] } : v));
-  };
-
   const addVehicle = (type: string) => {
+    const def = VEHICLE_TYPE_DEFS.find(d => d.type === type)!;
     const count = vehicles.filter(v => v.type === type).length;
     setVehicles(prev => [...prev, {
       id: `${type}-${Date.now()}`,
       type,
-      name: `${TYPE_LABELS[type]} - คันที่ ${count + 1}`,
-      capacityCBM: type === '4-wheel' ? 12 : type === '6-wheel' ? 32 : 48,
-      fuelConsumption: type === '4-wheel' ? 0.12 : type === '6-wheel' ? 0.2 : 0.28,
-      fixedCost: type === '4-wheel' ? 300 : type === '6-wheel' ? 450 : 600,
-      color: TYPE_COLORS[type],
+      name: `${def.label} - คันที่ ${count + 1}`,
+      capacityCBM: def.defaultCapacityCBM,
+      fuelConsumption: def.defaultFuelConsumption,
+      fixedCost: def.defaultFixedCost,
+      color: def.color,
       fuelPrice: 35,
       departureTime: '08:00',
     }]);
+  };
+
+  const updateVehicleType = (id: string, type: string) => {
+    const def = VEHICLE_TYPE_DEFS.find(d => d.type === type)!;
+    setVehicles(prev => prev.map(v => v.id === id ? { ...v, type, color: def.color } : v));
   };
 
   const removeVehicle = (id: string) => {
@@ -66,15 +59,18 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
   };
 
   const handleSave = async () => {
-    await saveFleet({ vehicles, driverWage });
+    await saveFleet({ vehicles, driverWage, enableColdStorage });
     onSaved();
     onClose();
   };
 
   const sortedVehicles = [...vehicles].sort((a, b) => {
-    const typeOrder = VEHICLE_TYPES.indexOf(a.type) - VEHICLE_TYPES.indexOf(b.type);
+    const typeOrder = VEHICLE_TYPE_DEFS.findIndex(d => d.type === a.type) - VEHICLE_TYPE_DEFS.findIndex(d => d.type === b.type);
     return typeOrder !== 0 ? typeOrder : a.name.localeCompare(b.name);
   });
+
+  const availableTypeDefs = getAvailableVehicleTypes(enableColdStorage);
+  const toggleLocked = enableColdStorage && !canDisableColdStorage(vehicles);
 
   return (
     <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
@@ -104,6 +100,20 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
                 <span className="font-bold text-slate-700 text-lg ml-3">บาท / ชั่วโมง</span>
               </div>
 
+              <div className="mb-6 bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-3">
+                <label className="relative inline-flex items-center cursor-pointer" title={toggleLocked ? 'ลบรถห้องเย็นออกจากกองรถก่อนจึงจะปิดได้' : undefined}>
+                  <input
+                    type="checkbox"
+                    className="sr-only peer"
+                    checked={enableColdStorage}
+                    disabled={toggleLocked}
+                    onChange={(e) => setEnableColdStorage(e.target.checked)}
+                  />
+                  <div className="w-11 h-6 bg-slate-300 rounded-full peer peer-checked:bg-fleet-navy peer-disabled:opacity-50 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-5" />
+                </label>
+                <span className="font-bold text-slate-700 text-lg">🧊 เปิดใช้งานรถห้องเย็น</span>
+              </div>
+
               <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
                 <div className="flex items-center justify-between mb-4 border-b border-slate-100 pb-3">
                   <div className="flex items-center">
@@ -111,13 +121,13 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
                     <h3 className="font-bold text-lg text-slate-800">รายการยานพาหนะ</h3>
                   </div>
                   <div className="flex gap-2">
-                    {VEHICLE_TYPES.map(type => (
+                    {availableTypeDefs.map(def => (
                       <button
-                        key={type}
-                        onClick={() => addVehicle(type)}
+                        key={def.type}
+                        onClick={() => addVehicle(def.type)}
                         className="flex items-center text-xs font-bold text-fleet-navy hover:underline"
                       >
-                        <Plus className="w-3 h-3 mr-1" /> {TYPE_LABELS[type]}
+                        <Plus className="w-3 h-3 mr-1" /> {def.label}
                       </button>
                     ))}
                   </div>
@@ -146,8 +156,8 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
                               onChange={(e) => updateVehicleType(v.id, e.target.value)}
                               className="border border-slate-300 rounded px-2 py-1 bg-white"
                             >
-                              {VEHICLE_TYPES.map(type => (
-                                <option key={type} value={type}>{TYPE_LABELS[type]}</option>
+                              {availableTypeDefs.map(def => (
+                                <option key={def.type} value={def.type}>{def.label}</option>
                               ))}
                             </select>
                           </td>
