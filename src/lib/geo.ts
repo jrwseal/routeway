@@ -180,6 +180,20 @@ export function parseVehicleTime(timeStr: string, todayStr = new Date().toISOStr
   return new Date(`${todayStr} ${(h ?? '08').padStart(2, '0')}:${(m ?? '00').padStart(2, '0')}`);
 }
 
+export function selectVehicleForRoute(
+  routeVolume: number,
+  availableFleet: Vehicle[],
+  eligibleFleetPool: Vehicle[],
+): Vehicle {
+  const eligibleIds = new Set(eligibleFleetPool.map((v) => v.id));
+  const found = availableFleet.find((v) => eligibleIds.has(v.id) && v.capacityCBM >= routeVolume);
+  if (found) return found;
+
+  const suitable = eligibleFleetPool.filter((v) => v.capacityCBM >= routeVolume);
+  const pool = suitable.length > 0 ? suitable : eligibleFleetPool;
+  return [...pool].sort((a, b) => a.capacityCBM - b.capacityCBM)[0];
+}
+
 export async function processData(
   nodes: RouteNode[],
   paramsWithoutStartTime: Omit<ProcessingParams, 'startTime'>,
