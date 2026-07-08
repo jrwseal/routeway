@@ -6,8 +6,8 @@ import { createApp } from '../app';
 describe('fleet routes', () => {
   let app: ReturnType<typeof createApp>;
 
-  beforeEach(() => {
-    app = createApp(createDb(':memory:'));
+  beforeEach(async () => {
+    app = createApp(await createDb(':memory:'));
   });
 
   it('returns the seeded default fleet', async () => {
