@@ -1,7 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Express } from 'express';
-import { createDb } from '../server/db';
-import { createApp } from '../server/app';
+import { createDb } from '../server/db.js';
+import { createApp } from '../server/app.js';
 
 let appPromise: Promise<Express> | null = null;
 

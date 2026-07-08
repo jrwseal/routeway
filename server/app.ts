@@ -1,7 +1,7 @@
 import express, { Express } from 'express';
 import type { Client } from '@libsql/client';
-import { fleetRouter } from './routes/fleet';
-import { planRouter } from './routes/plan';
+import { fleetRouter } from './routes/fleet.js';
+import { planRouter } from './routes/plan.js';
 
 export function createApp(db: Client): Express {
   const app = express();

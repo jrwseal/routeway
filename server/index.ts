@@ -1,8 +1,8 @@
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { createDb } from './db';
-import { createApp } from './app';
+import { createDb } from './db.js';
+import { createApp } from './app.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
