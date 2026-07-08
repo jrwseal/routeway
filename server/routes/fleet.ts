@@ -15,6 +15,7 @@ interface VehicleRow {
 
 interface SettingsRow {
   driver_wage: number;
+  enable_cold_storage: number;
 }
 
 export function fleetRouter(db: Client): Router {
@@ -38,11 +39,12 @@ export function fleetRouter(db: Client): Router {
         departureTime: r.departure_time,
       })),
       driverWage: settings.driver_wage,
+      enableColdStorage: Boolean(settings.enable_cold_storage),
     });
   });
 
   router.put('/', async (req, res) => {
-    const { vehicles, driverWage } = req.body ?? {};
+    const { vehicles, driverWage, enableColdStorage } = req.body ?? {};
     if (!Array.isArray(vehicles)) {
       res.status(400).json({ error: 'vehicles must be an array' });
       return;
@@ -53,6 +55,10 @@ export function fleetRouter(db: Client): Router {
         return;
       }
     }
+    if (!enableColdStorage && vehicles.some((v: any) => v.type === 'cold-storage')) {
+      res.status(400).json({ error: 'Cannot disable cold storage while cold-storage vehicles exist' });
+      return;
+    }
 
     await db.batch([
       { sql: 'DELETE FROM vehicles', args: [] },
@@ -60,7 +66,7 @@ export function fleetRouter(db: Client): Router {
         sql: 'INSERT INTO vehicles (id, type, name, capacity_cbm, fuel_consumption, fixed_cost, color, fuel_price, departure_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
         args: [v.id, v.type, v.name, v.capacityCBM, v.fuelConsumption, v.fixedCost, v.color, v.fuelPrice, v.departureTime],
       })),
-      { sql: 'UPDATE settings SET driver_wage = ? WHERE id = 1', args: [driverWage ?? 60] },
+      { sql: 'UPDATE settings SET driver_wage = ?, enable_cold_storage = ? WHERE id = 1', args: [driverWage ?? 60, enableColdStorage ? 1 : 0] },
     ], 'write');
 
     res.json({ ok: true });

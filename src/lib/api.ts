@@ -5,6 +5,7 @@ const BASE = '/api';
 export interface FleetConfig {
   vehicles: Vehicle[];
   driverWage: number;
+  enableColdStorage: boolean;
 }
 
 export interface ProgressEntry {

@@ -32,4 +32,47 @@ describe('fleet routes', () => {
     expect(getRes.body.vehicles[0].departureTime).toBe('09:30');
     expect(getRes.body.driverWage).toBe(70);
   });
+
+  it('returns enableColdStorage: false by default', async () => {
+    const res = await request(app).get('/api/fleet');
+    expect(res.body.enableColdStorage).toBe(false);
+  });
+
+  it('saves enableColdStorage: true with a cold-storage vehicle', async () => {
+    const putRes = await request(app).put('/api/fleet').send({
+      vehicles: [
+        { id: 'cold-1', type: 'cold-storage', name: 'Cold Truck 1', capacityCBM: 10, fuelConsumption: 0.18, fixedCost: 500, color: '#06B6D4', fuelPrice: 35, departureTime: '08:00' },
+      ],
+      driverWage: 60,
+      enableColdStorage: true,
+    });
+    expect(putRes.status).toBe(200);
+
+    const getRes = await request(app).get('/api/fleet');
+    expect(getRes.body.enableColdStorage).toBe(true);
+    expect(getRes.body.vehicles[0].type).toBe('cold-storage');
+  });
+
+  it('rejects disabling cold storage while a cold-storage vehicle is present', async () => {
+    await request(app).put('/api/fleet').send({
+      vehicles: [
+        { id: 'cold-1', type: 'cold-storage', name: 'Cold Truck 1', capacityCBM: 10, fuelConsumption: 0.18, fixedCost: 500, color: '#06B6D4', fuelPrice: 35, departureTime: '08:00' },
+      ],
+      driverWage: 60,
+      enableColdStorage: true,
+    });
+
+    const putRes = await request(app).put('/api/fleet').send({
+      vehicles: [
+        { id: 'cold-1', type: 'cold-storage', name: 'Cold Truck 1', capacityCBM: 10, fuelConsumption: 0.18, fixedCost: 500, color: '#06B6D4', fuelPrice: 35, departureTime: '08:00' },
+      ],
+      driverWage: 60,
+      enableColdStorage: false,
+    });
+    expect(putRes.status).toBe(400);
+    expect(putRes.body.error).toBe('Cannot disable cold storage while cold-storage vehicles exist');
+
+    const getRes = await request(app).get('/api/fleet');
+    expect(getRes.body.enableColdStorage).toBe(true);
+  });
 });
