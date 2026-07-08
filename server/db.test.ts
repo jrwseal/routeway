@@ -2,33 +2,31 @@ import { describe, it, expect } from 'vitest';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createRequire } from 'node:module';
+import { createClient } from '@libsql/client';
 import { createDb } from './db';
 
-const sqlite = createRequire(import.meta.url)('node:sqlite') as typeof import('node:sqlite');
-
 describe('createDb', () => {
-  it('seeds default settings', () => {
-    const db = createDb(':memory:');
-    const row = db.prepare('SELECT * FROM settings WHERE id = 1').get() as any;
+  it('seeds default settings', async () => {
+    const db = await createDb(':memory:');
+    const row = (await db.execute('SELECT * FROM settings WHERE id = 1')).rows[0];
     expect(row.driver_wage).toBe(60);
     expect(row.fuel_price_4w).toBe(35);
   });
 
-  it('seeds 9 default vehicles', () => {
-    const db = createDb(':memory:');
-    const row = db.prepare('SELECT COUNT(*) as count FROM vehicles').get() as any;
+  it('seeds 9 default vehicles', async () => {
+    const db = await createDb(':memory:');
+    const row = (await db.execute('SELECT COUNT(*) as count FROM vehicles')).rows[0];
     expect(row.count).toBe(9);
   });
 
-  it('does not reseed on a second call against the same file', () => {
+  it('does not reseed on a second call against the same file', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'routeway-db-test-'));
     const dbPath = join(dir, 'test.db');
     try {
-      const db1 = createDb(dbPath);
+      const db1 = await createDb(`file:${dbPath}`);
       db1.close();
-      const db2 = createDb(dbPath);
-      const count = (db2.prepare('SELECT COUNT(*) as count FROM vehicles').get() as any).count;
+      const db2 = await createDb(`file:${dbPath}`);
+      const count = (await db2.execute('SELECT COUNT(*) as count FROM vehicles')).rows[0].count as number;
       expect(count).toBe(9);
       db2.close();
     } finally {
@@ -36,12 +34,12 @@ describe('createDb', () => {
     }
   });
 
-  it('backfills fuel_price for a vehicles table that predates the column', () => {
+  it('backfills fuel_price for a vehicles table that predates the column', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'routeway-db-migration-test-'));
     const dbPath = join(dir, 'test.db');
     try {
-      const oldDb = new sqlite.DatabaseSync(dbPath);
-      oldDb.exec(`
+      const oldDb = createClient({ url: `file:${dbPath}` });
+      await oldDb.executeMultiple(`
         CREATE TABLE vehicles (
           id TEXT PRIMARY KEY,
           type TEXT NOT NULL,
@@ -75,8 +73,9 @@ describe('createDb', () => {
       `);
       oldDb.close();
 
-      const migratedDb = createDb(dbPath);
-      const rows = migratedDb.prepare('SELECT id, type, fuel_price as fuelPrice FROM vehicles ORDER BY id').all() as any[];
+      const migratedDb = await createDb(`file:${dbPath}`);
+      const result = await migratedDb.execute('SELECT id, type, fuel_price as fuelPrice FROM vehicles ORDER BY id');
+      const rows = result.rows.map(r => ({ id: r.id, type: r.type, fuelPrice: r.fuelPrice }));
       expect(rows).toEqual([
         { id: '10w-1', type: '10-wheel', fuelPrice: 53 },
         { id: '4w-1', type: '4-wheel', fuelPrice: 31 },
@@ -88,12 +87,12 @@ describe('createDb', () => {
     }
   });
 
-  it('backfills departure_time for a vehicles table that predates the column', () => {
+  it('backfills departure_time for a vehicles table that predates the column', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'routeway-db-migration-test-'));
     const dbPath = join(dir, 'test.db');
     try {
-      const oldDb = new sqlite.DatabaseSync(dbPath);
-      oldDb.exec(`
+      const oldDb = createClient({ url: `file:${dbPath}` });
+      await oldDb.executeMultiple(`
         CREATE TABLE vehicles (
           id TEXT PRIMARY KEY,
           type TEXT NOT NULL,
@@ -117,9 +116,9 @@ describe('createDb', () => {
       `);
       oldDb.close();
 
-      const migratedDb = createDb(dbPath);
-      const row = migratedDb.prepare('SELECT departure_time as departureTime FROM vehicles WHERE id = ?').get('4w-1') as any;
-      expect(row.departureTime).toBe('08:00');
+      const migratedDb = await createDb(`file:${dbPath}`);
+      const result = await migratedDb.execute({ sql: 'SELECT departure_time as departureTime FROM vehicles WHERE id = ?', args: ['4w-1'] });
+      expect(result.rows[0].departureTime).toBe('08:00');
       migratedDb.close();
     } finally {
       rmSync(dir, { recursive: true, force: true });
