@@ -73,6 +73,7 @@ export default function RouteMap({ data, onViewAlgorithm }: { data: ProcessedDat
 
   const depotIcon = createPinIcon('black', 32);
   const customerIcon = createPinIcon('#ef4444', 28);
+  const coldCustomerIcon = createPinIcon('#06B6D4', 28);
 
   return (
     <div className="relative w-full h-[350px] sm:h-[500px] border border-slate-300 rounded-lg overflow-hidden shadow-md mt-6">
@@ -94,13 +95,20 @@ export default function RouteMap({ data, onViewAlgorithm }: { data: ProcessedDat
         </Marker>
 
         {data.nodes.slice(1).map((node, idx) => {
-          const isActive = data.legs.some(leg => 
-            activeRouteIndices.includes(leg.routeIndex) && 
-            !leg.isReturnToDepot && 
-            leg.toNode.lat === node.lat && 
+          const isActive = data.legs.some(leg =>
+            activeRouteIndices.includes(leg.routeIndex) &&
+            !leg.isReturnToDepot &&
+            leg.toNode.lat === node.lat &&
             leg.toNode.lon === node.lon
           );
           if (!isActive) return null;
+          if (node.requiresColdStorage) {
+            return (
+              <Marker key={idx} position={[node.lat, node.lon]} icon={coldCustomerIcon}>
+                <Tooltip direction="top" offset={[0, 0]} opacity={1}>❄️ ต้องการรถห้องเย็น</Tooltip>
+              </Marker>
+            );
+          }
           return <Marker key={idx} position={[node.lat, node.lon]} icon={customerIcon} />;
         })}
 
@@ -141,15 +149,17 @@ export default function RouteMap({ data, onViewAlgorithm }: { data: ProcessedDat
           <div id="route-filter-list" className="p-3 max-h-64 overflow-y-auto space-y-2">
             {data.routeSummaries.map(summary => {
               const isActive = activeRouteIndices.includes(summary.routeIndex);
+              const hasColdStop = data.legs.some(leg => leg.routeIndex === summary.routeIndex && leg.toNode.requiresColdStorage);
               return (
                 <label key={summary.routeIndex} className="flex items-center space-x-3 cursor-pointer p-1.5 hover:bg-slate-50 rounded">
-                  <input 
+                  <input
                     type="checkbox"
                     checked={isActive}
                     onChange={() => toggleRoute(summary.routeIndex)}
                     className="w-4 h-4 text-fleet-navy rounded border-slate-300 focus:ring-fleet-navy"
                   />
-                  <div className="flex-1 text-sm font-medium text-slate-700 truncate">
+                  <div className="flex-1 text-sm font-medium text-slate-700 truncate flex items-center gap-1">
+                    {hasColdStop && <span title="มีจุดส่งที่ต้องการรถห้องเย็น">❄️</span>}
                     {summary.vehicle.name}
                   </div>
                   <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ backgroundColor: summary.vehicle.color }} />
