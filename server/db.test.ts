@@ -5,6 +5,17 @@ import { join } from 'node:path';
 import { createClient } from '@libsql/client';
 import { createDb } from './db';
 
+// libsql's native binding can hold the db file handle briefly after close()
+// on Windows; retry the delete and tolerate a leftover temp dir rather than
+// failing tests whose assertions already passed.
+function cleanupDir(dir: string) {
+  try {
+    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+  } catch {
+    // leftover temp dir on Windows — harmless
+  }
+}
+
 describe('createDb', () => {
   it('seeds default settings', async () => {
     const db = await createDb(':memory:');
@@ -30,7 +41,7 @@ describe('createDb', () => {
       expect(count).toBe(9);
       db2.close();
     } finally {
-      rmSync(dir, { recursive: true, force: true });
+      cleanupDir(dir);
     }
   });
 
@@ -83,7 +94,7 @@ describe('createDb', () => {
       ]);
       migratedDb.close();
     } finally {
-      rmSync(dir, { recursive: true, force: true });
+      cleanupDir(dir);
     }
   });
 
@@ -121,7 +132,7 @@ describe('createDb', () => {
       expect(result.rows[0].departureTime).toBe('08:00');
       migratedDb.close();
     } finally {
-      rmSync(dir, { recursive: true, force: true });
+      cleanupDir(dir);
     }
   });
 });
