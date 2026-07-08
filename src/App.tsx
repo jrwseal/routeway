@@ -9,6 +9,7 @@ import AlgorithmComparison from './components/AlgorithmComparison';
 import ComparisonPopup from './components/ComparisonPopup';
 import { processData, DEFAULT_FLEET_POOL } from './lib/geo';
 import { getFleet, saveActivePlan } from './lib/api';
+import { validateColdStorageFleet } from './lib/coldStorageValidation';
 import { AlertCircle, Loader2, Menu } from 'lucide-react';
 import FleetConfigModal from './components/FleetConfigModal';
 
@@ -52,6 +53,12 @@ export default function App() {
     setSavingsBaseline(null);
     if (nodes.length < 2) {
       alert("Manifest must contain at least a Depot and one customer node.");
+      return;
+    }
+
+    const coldStorageError = validateColdStorageFleet(nodes, activeFleetPool);
+    if (coldStorageError) {
+      alert(coldStorageError);
       return;
     }
 
