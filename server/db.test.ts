@@ -135,4 +135,49 @@ describe('createDb', () => {
       cleanupDir(dir);
     }
   });
+
+  it('seeds enable_cold_storage as 0 by default', async () => {
+    const db = await createDb(':memory:');
+    const row = (await db.execute('SELECT * FROM settings WHERE id = 1')).rows[0];
+    expect(row.enable_cold_storage).toBe(0);
+  });
+
+  it('backfills enable_cold_storage for a settings table that predates the column', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'routeway-db-migration-test-'));
+    const dbPath = join(dir, 'test.db');
+    try {
+      const oldDb = createClient({ url: `file:${dbPath}` });
+      await oldDb.executeMultiple(`
+        CREATE TABLE vehicles (
+          id TEXT PRIMARY KEY,
+          type TEXT NOT NULL,
+          name TEXT NOT NULL,
+          capacity_cbm REAL NOT NULL,
+          fuel_consumption REAL NOT NULL,
+          fixed_cost REAL NOT NULL,
+          color TEXT NOT NULL,
+          fuel_price REAL NOT NULL DEFAULT 35,
+          departure_time TEXT NOT NULL DEFAULT '08:00'
+        );
+        CREATE TABLE settings (
+          id INTEGER PRIMARY KEY CHECK (id = 1),
+          driver_wage REAL NOT NULL DEFAULT 60,
+          fuel_price_4w REAL NOT NULL DEFAULT 35,
+          fuel_price_6w REAL NOT NULL DEFAULT 35,
+          fuel_price_10w REAL NOT NULL DEFAULT 35
+        );
+        INSERT INTO settings (id, driver_wage) VALUES (1, 60);
+        INSERT INTO vehicles (id, type, name, capacity_cbm, fuel_consumption, fixed_cost, color) VALUES
+          ('4w-1', '4-wheel', 'Old 4W', 12, 0.12, 300, '#10B981');
+      `);
+      oldDb.close();
+
+      const migratedDb = await createDb(`file:${dbPath}`);
+      const row = (await migratedDb.execute('SELECT * FROM settings WHERE id = 1')).rows[0];
+      expect(row.enable_cold_storage).toBe(0);
+      migratedDb.close();
+    } finally {
+      cleanupDir(dir);
+    }
+  });
 });

@@ -33,7 +33,8 @@ export async function createDb(url: string, authToken?: string): Promise<Client>
       driver_wage REAL NOT NULL DEFAULT 60,
       fuel_price_4w REAL NOT NULL DEFAULT 35,
       fuel_price_6w REAL NOT NULL DEFAULT 35,
-      fuel_price_10w REAL NOT NULL DEFAULT 35
+      fuel_price_10w REAL NOT NULL DEFAULT 35,
+      enable_cold_storage INTEGER NOT NULL DEFAULT 0
     );
 
     CREATE TABLE IF NOT EXISTS active_plan (
@@ -87,6 +88,12 @@ export async function createDb(url: string, authToken?: string): Promise<Client>
   const hasDepartureTimeColumn = vehicleColumns.some((c) => c.name === 'departure_time');
   if (!hasDepartureTimeColumn) {
     await db.execute("ALTER TABLE vehicles ADD COLUMN departure_time TEXT NOT NULL DEFAULT '08:00'");
+  }
+
+  const settingsColumns = (await db.execute('PRAGMA table_info(settings)')).rows as unknown as { name: string }[];
+  const hasEnableColdStorageColumn = settingsColumns.some((c) => c.name === 'enable_cold_storage');
+  if (!hasEnableColdStorageColumn) {
+    await db.execute('ALTER TABLE settings ADD COLUMN enable_cold_storage INTEGER NOT NULL DEFAULT 0');
   }
 
   const vehicleCount = (await db.execute('SELECT COUNT(*) as count FROM vehicles')).rows[0].count as number;
