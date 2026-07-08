@@ -59,4 +59,31 @@ describe('validateColdStorageFleet', () => {
     const fleet = [makeVehicle({ type: '4-wheel' })];
     expect(validateColdStorageFleet(nodes, fleet)).toBeNull();
   });
+
+  it('blocks when a single cold order exceeds the largest cold vehicle capacity even though total capacity is sufficient', () => {
+    const nodes = [
+      makeNode({ id: 0 }),
+      makeNode({ id: 1, requiresColdStorage: true, demandVolume: 15 }),
+    ];
+    const fleet = [
+      makeVehicle({ id: 'cold-1', type: 'cold-storage', capacityCBM: 10 }),
+      makeVehicle({ id: 'cold-2', type: 'cold-storage', capacityCBM: 10 }),
+    ];
+    const result = validateColdStorageFleet(nodes, fleet);
+    expect(result).not.toBeNull();
+    expect(result).toContain('15');
+    expect(result).toContain('10');
+  });
+
+  it('returns null when the largest cold order fits within the largest cold vehicle capacity', () => {
+    const nodes = [
+      makeNode({ id: 0 }),
+      makeNode({ id: 1, requiresColdStorage: true, demandVolume: 10 }),
+    ];
+    const fleet = [
+      makeVehicle({ id: 'cold-1', type: 'cold-storage', capacityCBM: 5 }),
+      makeVehicle({ id: 'cold-2', type: 'cold-storage', capacityCBM: 10 }),
+    ];
+    expect(validateColdStorageFleet(nodes, fleet)).toBeNull();
+  });
 });
