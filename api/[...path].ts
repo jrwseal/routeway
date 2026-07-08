@@ -1,13 +1,14 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { Express } from 'express';
 import { createDb } from '../server/db';
 import { createApp } from '../server/app';
 
-let appPromise: ReturnType<typeof createApp> | null = null;
+let appPromise: Promise<Express> | null = null;
 
-async function getApp() {
+function getApp(): Promise<Express> {
   if (!appPromise) {
-    const db = await createDb(process.env.TURSO_DATABASE_URL!, process.env.TURSO_AUTH_TOKEN);
-    appPromise = createApp(db);
+    appPromise = createDb(process.env.TURSO_DATABASE_URL!, process.env.TURSO_AUTH_TOKEN)
+      .then((db) => createApp(db));
   }
   return appPromise;
 }
