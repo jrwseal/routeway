@@ -5,6 +5,7 @@ export interface RouteNode {
   lon: number;
   demandVolume: number;
   weight: number;
+  requiresColdStorage: boolean;
   readyTime: Date | null;
   dueTime: Date | null;
   originalReadyString?: string;

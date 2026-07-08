@@ -5,11 +5,11 @@ import type { RouteNode, ProcessingParams } from '../types';
 
 const depot: RouteNode = {
   id: 0, location: 'Depot', lat: 13.7, lon: 100.5,
-  demandVolume: 0, weight: 0, readyTime: null, dueTime: null,
+  demandVolume: 0, weight: 0, requiresColdStorage: false, readyTime: null, dueTime: null,
 };
 const makeNode = (id: number, lat: number, lon: number, vol: number): RouteNode => ({
   id, location: `Node${id}`, lat, lon,
-  demandVolume: vol, weight: 0, readyTime: null, dueTime: null,
+  demandVolume: vol, weight: 0, requiresColdStorage: false, readyTime: null, dueTime: null,
 });
 
 const baseParams: ProcessingParams = {
@@ -116,7 +116,7 @@ describe('checkRouteFeasible', () => {
     const lateDepot: RouteNode = { ...depot };
     const strictNode: RouteNode = {
       id: 5, location: 'Strict', lat: 20.0, lon: 100.5,
-      demandVolume: 1, weight: 0,
+      demandVolume: 1, weight: 0, requiresColdStorage: false,
       readyTime: null,
       dueTime: new Date('2024-01-01T08:05:00'), // 5 min after startTime, node is ~700km away
     };

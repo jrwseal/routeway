@@ -65,6 +65,7 @@ export default function Sidebar({
               lon: parseFloat(row['Lon']),
               demandVolume: parseFloat(row['Demand_Volume']) || 0,
               weight: parseFloat(row['Weight']) || 0,
+              requiresColdStorage: row['ต้องการรถห้องเย็น']?.trim() === 'ใช่',
               readyTime: parseTime(row['Ready_Time']),
               dueTime: parseTime(row['Due_Time']),
               originalReadyString: row['Ready_Time'],
@@ -153,7 +154,7 @@ export default function Sidebar({
         </div>
         <div className="text-xs text-slate-500 flex items-start mt-1">
           <Info className="w-3 h-3 mr-1 mt-0.5 inline-block shrink-0" />
-          <span>Expected columns: Location, Lat, Lon, Demand_Volume, Ready_Time, Due_Time</span>
+          <span>Expected columns: Location, Lat, Lon, Demand_Volume, Ready_Time, Due_Time (optional: ต้องการรถห้องเย็น)</span>
         </div>
       </div>
 

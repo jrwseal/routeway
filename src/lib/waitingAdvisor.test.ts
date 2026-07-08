@@ -11,6 +11,7 @@ const makeNode = (id: number, dueTime: Date | null = null): RouteNode => ({
   lon: 100.5,
   demandVolume: 5,
   weight: 5,
+  requiresColdStorage: false,
   readyTime: null,
   dueTime,
 });
