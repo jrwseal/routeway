@@ -25,8 +25,8 @@ const samplePlan = () => ({
 describe('plan routes', () => {
   let app: ReturnType<typeof createApp>;
 
-  beforeEach(() => {
-    app = createApp(createDb(':memory:'));
+  beforeEach(async () => {
+    app = createApp(await createDb(':memory:'));
   });
 
   it('returns null when no plan exists yet', async () => {
