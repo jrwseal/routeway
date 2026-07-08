@@ -7,13 +7,27 @@ import { createApp } from './app';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const dataDir = path.join(__dirname, 'data');
-fs.mkdirSync(dataDir, { recursive: true });
+async function main() {
+  const tursoUrl = process.env.TURSO_DATABASE_URL;
+  let dbUrl: string;
+  let authToken: string | undefined;
 
-const db = createDb(path.join(dataDir, 'app.db'));
-const app = createApp(db);
-const port = Number(process.env.PORT) || 3001;
+  if (tursoUrl) {
+    dbUrl = tursoUrl;
+    authToken = process.env.TURSO_AUTH_TOKEN;
+  } else {
+    const dataDir = path.join(__dirname, 'data');
+    fs.mkdirSync(dataDir, { recursive: true });
+    dbUrl = `file:${path.join(dataDir, 'app.db')}`;
+  }
 
-app.listen(port, () => {
-  console.log(`RouteWay API listening on port ${port}`);
-});
+  const db = await createDb(dbUrl, authToken);
+  const app = createApp(db);
+  const port = Number(process.env.PORT) || 3001;
+
+  app.listen(port, () => {
+    console.log(`RouteWay API listening on port ${port}`);
+  });
+}
+
+main();
