@@ -12,6 +12,8 @@ describe('LoginMockup', () => {
     expect(html).toContain('Password');
     expect(html).toContain('Sign in');
     expect(html).toContain('Use demo mode');
+    expect(html).toContain('Try RouteWay Care');
+    expect(html).toContain('?care=1');
     expect(html).not.toContain('Fleet operations portal');
     expect(html).not.toContain("Today's control status");
   });

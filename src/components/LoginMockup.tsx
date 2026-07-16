@@ -83,6 +83,15 @@ export default function LoginMockup({ onSignIn }: LoginMockupProps) {
                 </button>
               </div>
             </form>
+
+            <a
+              href="?care=1"
+              className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg px-5 py-3 text-sm font-bold text-white transition-colors"
+              style={{ backgroundColor: 'var(--color-care-navy)' }}
+            >
+              Try RouteWay Care
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </a>
         </section>
       </div>
     </main>
