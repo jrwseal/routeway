@@ -1,8 +1,11 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { MapPin, Navigation, CheckCircle2, XCircle, Clock, Gauge } from 'lucide-react';
-import type { Parcel, RouteNode } from '../types';
+import { MapPin, Navigation, CheckCircle2, XCircle, Clock, Gauge, AlertTriangle } from 'lucide-react';
+import type { Parcel, RouteLeg, RouteNode } from '../types';
 import { distanceMeters, statusFromDistance, type GeofenceStatus } from '../lib/geofence';
+import { legsToPolyline } from '../lib/routeDeviation';
 import { useGeolocation } from './useGeolocation';
+import { useRouteDeviationMonitor } from './useRouteDeviationMonitor';
+import { setReasonForLatest, type DeviationReason } from './deviationLog';
 import { getDeliveryLog, appendDeliveryLog, type DeliveryLogEntry } from './deliveryLog';
 
 const COLORS = {
@@ -37,13 +40,29 @@ interface DriverCheckInTarget {
 interface DriverCheckInProps {
   target: DriverCheckInTarget;
   geofenceRadiusMeters?: number;
+  routeLegs?: RouteLeg[];
+  corridorMeters?: number;
 }
 
-export default function DriverCheckIn({ target, geofenceRadiusMeters = 80 }: DriverCheckInProps) {
+const REASON_LABELS: { value: DeviationReason; label: string }[] = [
+  { value: 'traffic', label: 'รถติด' },
+  { value: 'road-closed', label: 'ถนนปิด' },
+  { value: 'other-stop', label: 'แวะจุดอื่น' },
+];
+
+export default function DriverCheckIn({ target, geofenceRadiusMeters = 80, routeLegs, corridorMeters = 300 }: DriverCheckInProps) {
   const { coords, error } = useGeolocation();
   const [confirmed, setConfirmed] = useState(false);
   const [confirmedAt, setConfirmedAt] = useState<string | null>(null);
   const [log, setLog] = useState<DeliveryLogEntry[]>(() => getDeliveryLog());
+
+  const polyline = useMemo(() => (routeLegs ? legsToPolyline(routeLegs) : []), [routeLegs]);
+  const { activeDeviation, dismissActiveDeviation } = useRouteDeviationMonitor(coords, polyline, corridorMeters);
+
+  const handleFlagReason = useCallback((reason: DeviationReason) => {
+    setReasonForLatest(reason);
+    dismissActiveDeviation();
+  }, [dismissActiveDeviation]);
 
   const distance = coords
     ? distanceMeters(coords, { lat: target.node.lat, lon: target.node.lon })
@@ -100,6 +119,36 @@ export default function DriverCheckIn({ target, geofenceRadiusMeters = 80 }: Dri
             </span>
           </div>
         </div>
+
+        {activeDeviation && (
+          <div style={{ backgroundColor: 'rgba(255,200,87,0.12)', border: `1px solid ${COLORS.warn}` }} className="rounded-xl p-3 flex flex-col gap-2">
+            <div className="flex items-start gap-2">
+              <AlertTriangle size={16} color={COLORS.warn} className="flex-shrink-0 mt-0.5" />
+              <p style={{ color: COLORS.warn }} className="text-xs font-medium">
+                ออกนอกเส้นทางมา {Math.round(activeDeviation.durationMinutes)} นาที ({activeDeviation.distanceFromRoute}ม.)
+              </p>
+            </div>
+            <div className="flex gap-2">
+              {REASON_LABELS.map(({ value, label }) => (
+                <button
+                  key={value}
+                  onClick={() => handleFlagReason(value)}
+                  style={{ backgroundColor: 'rgba(255,255,255,0.06)', color: 'white' }}
+                  className="flex-1 rounded-lg py-1.5 text-[11px] font-medium"
+                >
+                  {label}
+                </button>
+              ))}
+              <button
+                onClick={dismissActiveDeviation}
+                style={{ color: COLORS.muted }}
+                className="px-2 text-[11px]"
+              >
+                ปิด
+              </button>
+            </div>
+          </div>
+        )}
 
         <div style={{ backgroundColor: COLORS.surface, border: '1px solid rgba(255,255,255,0.08)' }} className="rounded-2xl p-4">
           <div className="flex items-center gap-2 mb-1">
