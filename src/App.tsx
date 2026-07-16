@@ -179,7 +179,7 @@ export default function App() {
   if (isCareMode) {
     return (
       <CareLayout
-        nodes={careSampleNodes}
+        initialNodes={careSampleNodes}
         baseParams={{ fleetPool: careSampleFleet, avgSpeed: 40, driverWage: 60, algorithm: 'or-opt-sa', applyTwoOpt: false }}
       />
     );

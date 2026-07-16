@@ -1,8 +1,7 @@
-import React from 'react';
+﻿import React from 'react';
 import { RouteNode, ProcessedData } from '../types';
 import { Truck, Navigation, Leaf, UploadCloud, Info, BarChart, X } from 'lucide-react';
-import Papa from 'papaparse';
-import { parse } from 'date-fns';
+import { readManifestFile } from '../lib/csvParser';
 import AppLogo from './AppLogo';
 
 interface SidebarProps {
@@ -28,68 +27,13 @@ export default function Sidebar({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const buffer = event.target?.result as ArrayBuffer;
-      if (!buffer) return;
-
-      // Try UTF-8 first (handles utf-8-sig automatically by stripping BOM)
-      let text = new TextDecoder('utf-8').decode(buffer);
-      
-      // If decoding UTF-8 reveals replacement characters, fallback to Thai encoding (cp874 / windows-874)
-      if (text.includes('\uFFFD')) {
-        text = new TextDecoder('windows-874').decode(buffer);
-      }
-
-      Papa.parse(text, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          try {
-            const parsedNodes: RouteNode[] = results.data.map((row: any, index: number) => {
-            const todayStr = new Date().toISOString().split('T')[0];
-            const parseTime = (timeStr: string) => {
-              if (!timeStr || !timeStr.trim()) return null;
-              const parts = timeStr.trim().split(':');
-              if (parts.length >= 2) {
-                const h = parts[0].padStart(2, '0');
-                const m = parts[1].padStart(2, '0');
-                return parse(`${todayStr} ${h}:${m}`, 'yyyy-MM-dd HH:mm', new Date());
-              }
-              return null;
-            };
-
-            return {
-              id: index,
-              location: row['Location'] || `Node ${index}`,
-              lat: parseFloat(row['Lat']),
-              lon: parseFloat(row['Lon']),
-              demandVolume: parseFloat(row['Demand_Volume']) || 0,
-              weight: parseFloat(row['Weight']) || 0,
-              requiresColdStorage: row['ต้องการรถห้องเย็น']?.trim() === 'ใช่',
-              readyTime: parseTime(row['Ready_Time']),
-              dueTime: parseTime(row['Due_Time']),
-              originalReadyString: row['Ready_Time'],
-              originalDueString: row['Due_Time'],
-            }
-          });
-
-          // Validate
-          if (parsedNodes.some(n => isNaN(n.lat) || isNaN(n.lon))) {
-            alert('Invalid CSV: Missing Lat or Lon columns.');
-            return;
-          }
-
-          onDataLoaded(parsedNodes);
-        } catch (error) {
-          alert('Error parsing CSV. Please ensure format is correct.');
-          console.error(error);
-        }
-      }
-    });
+    readManifestFile(file)
+      .then(onDataLoaded)
+      .catch((error: Error) => {
+        alert(error.message.startsWith('Invalid CSV') ? error.message : 'Error parsing CSV. Please ensure format is correct.');
+        console.error(error);
+      });
   };
-  reader.readAsArrayBuffer(file);
-};
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard & Savings', icon: <Truck className="w-4 h-4 mr-2" /> },
@@ -152,7 +96,7 @@ export default function Sidebar({
         </div>
         <div className="text-xs text-slate-500 flex items-start mt-1">
           <Info className="w-3 h-3 mr-1 mt-0.5 inline-block shrink-0" />
-          <span>Expected columns: Location, Lat, Lon, Demand_Volume, Ready_Time, Due_Time (optional: ต้องการรถห้องเย็น)</span>
+          <span>Expected columns: Location, Lat, Lon, Demand_Volume, Ready_Time, Due_Time (optional: ต้องการรถห้องเย็น, Parcel_Id, Parcel_Name, Parcel_Tier, Max_Exposure_Minutes, Temp_Min_C, Temp_Max_C)</span>
         </div>
       </div>
 
