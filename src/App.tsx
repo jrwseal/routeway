@@ -15,6 +15,7 @@ import { validateColdStorageFleet } from './lib/coldStorageValidation';
 import { AlertCircle, Loader2, Menu } from 'lucide-react';
 import FleetConfigModal from './components/FleetConfigModal';
 import CareLayout from './care/CareLayout';
+import CareDriverDemo from './care/CareDriverDemo';
 import { careSampleNodes } from './data/careSampleData';
 import { careSampleFleet } from './data/careSampleFleet';
 
@@ -175,14 +176,14 @@ export default function App() {
     }
   };
 
-  const isCareMode = typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('care') === '1';
+  const careQuery = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const isCareMode = careQuery?.get('care') === '1';
   if (isCareMode) {
-    return (
-      <CareLayout
-        initialNodes={careSampleNodes}
-        baseParams={{ fleetPool: careSampleFleet, avgSpeed: 40, driverWage: 60, algorithm: 'or-opt-sa', applyTwoOpt: false }}
-      />
-    );
+    const careBaseParams = { fleetPool: careSampleFleet, avgSpeed: 40, driverWage: 60, algorithm: 'or-opt-sa' as const, applyTwoOpt: false };
+    if (careQuery?.get('driver') === '1') {
+      return <CareDriverDemo nodes={careSampleNodes} baseParams={careBaseParams} />;
+    }
+    return <CareLayout initialNodes={careSampleNodes} baseParams={careBaseParams} />;
   }
 
   if (!isSignedIn) {
