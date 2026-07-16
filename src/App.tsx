@@ -14,7 +14,7 @@ import { getFleet, saveActivePlan } from './lib/api';
 import { validateColdStorageFleet } from './lib/coldStorageValidation';
 import { AlertCircle, Loader2, Menu } from 'lucide-react';
 import FleetConfigModal from './components/FleetConfigModal';
-import CareLayout from './care/CareLayout';
+import CareTab from './care/CareTab';
 import CareDriverDemo from './care/CareDriverDemo';
 import { careSampleNodes } from './data/careSampleData';
 import { careSampleFleet } from './data/careSampleFleet';
@@ -177,13 +177,10 @@ export default function App() {
   };
 
   const careQuery = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  const isCareMode = careQuery?.get('care') === '1';
-  if (isCareMode) {
+  if (careQuery?.get('care') === '1' && careQuery?.get('driver') === '1') {
+    // Standalone mobile driver check-in screen — deliberately outside the desktop Sidebar shell.
     const careBaseParams = { fleetPool: careSampleFleet, avgSpeed: 40, driverWage: 60, algorithm: 'or-opt-sa' as const, applyTwoOpt: false };
-    if (careQuery?.get('driver') === '1') {
-      return <CareDriverDemo nodes={careSampleNodes} baseParams={careBaseParams} />;
-    }
-    return <CareLayout initialNodes={careSampleNodes} baseParams={careBaseParams} />;
+    return <CareDriverDemo nodes={careSampleNodes} baseParams={careBaseParams} />;
   }
 
   if (!isSignedIn) {
@@ -259,6 +256,14 @@ export default function App() {
               />
             )}
             {currentTab === 'carbon' && <CarbonFootprint data={processedData} savingsBaseline={savingsBaseline} comparisonData={comparisonData} />}
+            {currentTab === 'care' && (
+              <CareTab
+                data={processedData}
+                fleetPool={activeFleetPool}
+                avgSpeed={avgSpeed}
+                driverWage={driverWaitingWage}
+              />
+            )}
             {currentTab === 'comparison' && comparisonData && (
               <AlgorithmComparison
                 data={comparisonData}

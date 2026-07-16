@@ -1,6 +1,6 @@
 ﻿import React from 'react';
 import { RouteNode, ProcessedData } from '../types';
-import { Truck, Navigation, Leaf, UploadCloud, Info, BarChart, X } from 'lucide-react';
+import { Truck, Navigation, Leaf, UploadCloud, Info, BarChart, X, Snowflake } from 'lucide-react';
 import { readManifestFile } from '../lib/csvParser';
 import AppLogo from './AppLogo';
 
@@ -37,6 +37,7 @@ export default function Sidebar({
 
   const menuItems = [
     { id: 'dashboard', label: 'Dashboard & Savings', icon: <Truck className="w-4 h-4 mr-2" /> },
+    { id: 'care', label: 'RouteWay Care', icon: <Snowflake className="w-4 h-4 mr-2" /> },
     { id: 'driver', label: 'Interactive Driver Portal', icon: <Navigation className="w-4 h-4 mr-2" /> },
     { id: 'carbon', label: 'Carbon Footprint', icon: <Leaf className="w-4 h-4 mr-2" /> },
     { id: 'statistics', label: 'Statistics car', icon: <BarChart className="w-4 h-4 mr-2" /> },
