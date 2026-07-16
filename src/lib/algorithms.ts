@@ -1,4 +1,5 @@
 import { getFallbackDist } from './geo';
+import { computeExposurePenalty } from './coldChainPenalty';
 import type { RouteNode, ProcessingParams } from '../types';
 
 function getMaxCapacity(params: ProcessingParams): number {
@@ -211,6 +212,10 @@ function totalDistance(routes: number[][], nodes: RouteNode[]): number {
   return routes.reduce((sum, r) => sum + routeDistance(r, nodes), 0);
 }
 
+function combinedCost(routes: number[][], nodes: RouteNode[], params: ProcessingParams): number {
+  return totalDistance(routes, nodes) + computeExposurePenalty(routes, nodes, params);
+}
+
 export function twoOptFeasible(route: number[], nodes: RouteNode[], params: ProcessingParams): number[] {
   const optimized = twoOpt(route, nodes);
   return checkRouteFeasible(optimized, nodes, params) ? optimized : route;
@@ -220,7 +225,7 @@ export function orOptAnnealing(nodes: RouteNode[], params: ProcessingParams): nu
   const ITERATIONS = 500;
   let routes: number[][] = clarkWrightSavings(nodes, params).map(r => [...r]);
   let bestRoutes: number[][] = routes.map(r => [...r]);
-  let bestCost = totalDistance(bestRoutes, nodes);
+  let bestCost = combinedCost(bestRoutes, nodes, params);
   let currentCost = bestCost;
 
   const initialT = currentCost > 0 ? currentCost / Math.max(nodes.length - 1, 1) : 1;
@@ -263,7 +268,7 @@ export function orOptAnnealing(nodes: RouteNode[], params: ProcessingParams): nu
     if (newSourceRoute.length > 0 && !checkRouteFeasible(newSourceRoute, nodes, params)) continue;
     if (!checkRouteFeasible(newTargetRoute, nodes, params)) continue;
 
-    const candidateCost = totalDistance(candidateRoutes, nodes);
+    const candidateCost = combinedCost(candidateRoutes, nodes, params);
     const delta = candidateCost - currentCost;
 
     const accept = delta < 0 || Math.random() < Math.exp(-delta / Math.max(temperature, 0.0001));

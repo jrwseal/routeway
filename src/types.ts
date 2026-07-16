@@ -10,6 +10,15 @@ export interface RouteNode {
   dueTime: Date | null;
   originalReadyString?: string;
   originalDueString?: string;
+  parcels?: Parcel[];
+}
+
+export interface Parcel {
+  id: string;
+  name: string;
+  tier: 'critical' | 'standard' | 'low';
+  maxExposureMinutes: number;
+  requiredTemp: { min: number; max: number };
 }
 
 export interface Vehicle {
@@ -22,6 +31,8 @@ export interface Vehicle {
   color: string;
   fuelPrice: number;
   departureTime: string;
+  hasColdStorage?: boolean;
+  coldStorageCapacity?: number;
 }
 
 export interface RouteLeg {

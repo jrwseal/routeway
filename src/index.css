@@ -13,6 +13,17 @@
   --color-route-orange: #F97316;
   --color-neutral-canvas: #F8FAFC;
 
+  --color-care-navy: #0B2545;
+  --color-care-cool: #3EC1D3;
+  --color-care-warn: #FFC857;
+  --color-care-critical: #F2545B;
+  --color-care-surface: #EAF0F6;
+  --color-care-ink: #1B1B1E;
+
+  --font-care-heading: "Space Grotesk", sans-serif;
+  --font-care-body: "Inter", sans-serif;
+  --font-care-mono: "JetBrains Mono", monospace;
+
   --animate-fade-in: fade-in 0.2s ease-out;
   --animate-slide-up: slide-up 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 
