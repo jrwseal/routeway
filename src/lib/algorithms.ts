@@ -1,5 +1,6 @@
 import { getFallbackDist } from './geo';
 import { computeExposurePenalty } from './coldChainPenalty';
+import { computePriorityPenalty } from './priorityPenalty';
 import type { RouteNode, ProcessingParams } from '../types';
 
 function getMaxCapacity(params: ProcessingParams): number {
@@ -213,7 +214,12 @@ function totalDistance(routes: number[][], nodes: RouteNode[]): number {
 }
 
 function combinedCost(routes: number[][], nodes: RouteNode[], params: ProcessingParams): number {
-  return totalDistance(routes, nodes) + computeExposurePenalty(routes, nodes, params);
+  const priorityWeight = params.priorityWeight ?? 1;
+  return (
+    totalDistance(routes, nodes) +
+    computeExposurePenalty(routes, nodes, params) +
+    priorityWeight * computePriorityPenalty(routes, nodes)
+  );
 }
 
 export function twoOptFeasible(route: number[], nodes: RouteNode[], params: ProcessingParams): number[] {

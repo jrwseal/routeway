@@ -2,7 +2,7 @@ import { getFallbackDist } from './geo';
 import type { RouteNode, ProcessingParams } from '../types';
 
 const PENALTY_PER_MINUTE = 10;
-const TIER_WEIGHT: Record<string, number> = { critical: 3, standard: 1.5, low: 1 };
+export const TIER_WEIGHT: Record<string, number> = { critical: 3, standard: 1.5, low: 1 };
 
 export function computeExposurePenalty(
   routes: number[][],

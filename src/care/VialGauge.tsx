@@ -1,10 +1,18 @@
 import React from 'react';
+import type { Parcel } from '../types';
 
 interface VialGaugeProps {
   elapsedMinutes: number;
   maxMinutes: number;
   label?: string;
+  tier?: Parcel['tier'];
 }
+
+const TIER_DOT_COLOR: Record<string, string> = {
+  critical: 'var(--color-care-critical)',
+  standard: 'var(--color-care-warn)',
+  low: 'var(--color-care-cool)',
+};
 
 function hexToRgb(hex: string): [number, number, number] {
   const n = parseInt(hex.slice(1), 16);
@@ -29,7 +37,7 @@ function colorFor(ratio: number): string {
   return lerpColor(WARN, CRITICAL, Math.min((ratio - 0.6) / 0.4, 1));
 }
 
-export default function VialGauge({ elapsedMinutes, maxMinutes, label }: VialGaugeProps) {
+export default function VialGauge({ elapsedMinutes, maxMinutes, label, tier }: VialGaugeProps) {
   const ratio = maxMinutes > 0 ? elapsedMinutes / maxMinutes : 0;
   const fillPercent = Math.min(Math.max(ratio, 0), 1) * 100;
   const expired = ratio >= 1;
@@ -48,8 +56,14 @@ export default function VialGauge({ elapsedMinutes, maxMinutes, label }: VialGau
         />
       </div>
       <div>
-        {label && (
-          <div className="text-xs" style={{ color: 'var(--color-care-ink)', opacity: 0.7 }}>
+        {(label || tier) && (
+          <div className="flex items-center gap-1.5 text-xs" style={{ color: 'var(--color-care-ink)', opacity: 0.7 }}>
+            {tier && (
+              <span
+                className="inline-block w-2 h-2 rounded-full flex-shrink-0"
+                style={{ backgroundColor: TIER_DOT_COLOR[tier] ?? TIER_DOT_COLOR.low }}
+              />
+            )}
             {label}
           </div>
         )}

@@ -65,6 +65,7 @@ export interface ProcessingParams {
   driverWage: number;
   algorithm: 'savings' | 'nearest-neighbor' | 'sweep' | 'or-opt-sa' | 'solomon-i1';
   applyTwoOpt: boolean;
+  priorityWeight?: number;
 }
 
 export interface ComparisonResult {

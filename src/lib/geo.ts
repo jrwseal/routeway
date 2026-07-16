@@ -115,7 +115,7 @@ export const DEFAULT_FLEET_POOL: Vehicle[] = [
   },
 ];
 
-export function getFallbackDist(
+export function haversineKm(
   coord1: [number, number],
   coord2: [number, number],
 ): number {
@@ -131,8 +131,15 @@ export function getFallbackDist(
       Math.sin(dLon / 2) *
       Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  const d = R * c; // Distance in km
-  return d * 1.3;
+  return R * c; // Straight-line distance in km
+}
+
+export function getFallbackDist(
+  coord1: [number, number],
+  coord2: [number, number],
+): number {
+  // 1.3x fudge factor approximates road distance from straight-line distance.
+  return haversineKm(coord1, coord2) * 1.3;
 }
 
 export async function getRoute(
