@@ -66,6 +66,8 @@ export interface ProcessingParams {
   algorithm: 'savings' | 'nearest-neighbor' | 'sweep' | 'or-opt-sa' | 'solomon-i1';
   applyTwoOpt: boolean;
   priorityWeight?: number;
+  /** Self-calibration (Care Phase 3.5): learned avg minutes late/early per delivery point, keyed by nodeKey(). */
+  calibratedDelayByNodeKey?: Map<string, number>;
 }
 
 export interface ComparisonResult {

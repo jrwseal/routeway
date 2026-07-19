@@ -8,7 +8,7 @@ export interface DeliveryLogEntry {
   distanceAtConfirm: number;
 }
 
-const STORAGE_KEY = 'routeway-care-delivery-log';
+export const STORAGE_KEY = 'routeway-care-delivery-log';
 
 function hasLocalStorage(): boolean {
   return typeof localStorage !== 'undefined';
