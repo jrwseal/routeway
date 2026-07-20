@@ -1,4 +1,6 @@
 import { createClient, type Client } from '@libsql/client';
+import bcrypt from 'bcryptjs';
+import crypto from 'node:crypto';
 
 const DEFAULT_VEHICLES = [
   { id: '4w-1', type: '4-wheel', name: 'รถบรรทุก 4 ล้อใหญ่ - คันที่ 1', capacityCBM: 12, fuelConsumption: 0.12, fixedCost: 300, color: '#10B981' },
@@ -53,6 +55,22 @@ export async function createDb(url: string, authToken?: string): Promise<Client>
       step_state TEXT NOT NULL DEFAULT 'pending',
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
+
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      username TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      role TEXT NOT NULL CHECK (role IN ('admin', 'driver')),
+      display_name TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      token TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL REFERENCES users(id),
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      expires_at TEXT NOT NULL
+    );
   `);
 
   const settingsCount = (await db.execute('SELECT COUNT(*) as count FROM settings')).rows[0].count as number;
@@ -90,6 +108,11 @@ export async function createDb(url: string, authToken?: string): Promise<Client>
     await db.execute("ALTER TABLE vehicles ADD COLUMN departure_time TEXT NOT NULL DEFAULT '08:00'");
   }
 
+  const hasDriverUserIdColumn = vehicleColumns.some((c) => c.name === 'driver_user_id');
+  if (!hasDriverUserIdColumn) {
+    await db.execute('ALTER TABLE vehicles ADD COLUMN driver_user_id TEXT REFERENCES users(id)');
+  }
+
   const settingsColumns = (await db.execute('PRAGMA table_info(settings)')).rows as unknown as { name: string }[];
   const hasEnableColdStorageColumn = settingsColumns.some((c) => c.name === 'enable_cold_storage');
   if (!hasEnableColdStorageColumn) {
@@ -105,6 +128,19 @@ export async function createDb(url: string, authToken?: string): Promise<Client>
       })),
       'write'
     );
+  }
+
+  const userColumns = (await db.execute('PRAGMA table_info(users)')).rows as unknown as { name: string; type: string }[];
+  const hasTextIdColumn = userColumns.some((c) => c.name === 'id' && c.type === 'TEXT');
+  if (hasTextIdColumn) {
+    const userCount = (await db.execute('SELECT COUNT(*) as count FROM users')).rows[0].count as number;
+    if (userCount === 0) {
+      const passwordHash = await bcrypt.hash('admin123', 10);
+      await db.execute({
+        sql: 'INSERT INTO users (id, username, password_hash, role, display_name) VALUES (?, ?, ?, ?, ?)',
+        args: [crypto.randomUUID(), 'admin', passwordHash, 'admin', 'Admin'],
+      });
+    }
   }
 
   return db;

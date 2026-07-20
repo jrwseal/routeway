@@ -142,6 +142,39 @@ describe('createDb', () => {
     expect(row.enable_cold_storage).toBe(0);
   });
 
+  it('seeds a default admin user', async () => {
+    const db = await createDb(':memory:');
+    const row = (await db.execute("SELECT * FROM users WHERE username = 'admin'")).rows[0];
+    expect(row).toBeDefined();
+    expect(row.role).toBe('admin');
+    expect(row.display_name).toBe('Admin');
+    expect(row.password_hash).not.toBe('admin123');
+
+    const bcrypt = await import('bcryptjs');
+    expect(await bcrypt.compare('admin123', row.password_hash as string)).toBe(true);
+  });
+
+  it('does not reseed the admin user on a second call against the same file', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'routeway-db-admin-seed-test-'));
+    const dbPath = join(dir, 'test.db');
+    try {
+      const db1 = await createDb(`file:${dbPath}`);
+      db1.close();
+      const db2 = await createDb(`file:${dbPath}`);
+      const count = (await db2.execute("SELECT COUNT(*) as count FROM users WHERE username = 'admin'")).rows[0].count as number;
+      expect(count).toBe(1);
+      db2.close();
+    } finally {
+      cleanupDir(dir);
+    }
+  });
+
+  it('adds a driver_user_id column to vehicles', async () => {
+    const db = await createDb(':memory:');
+    const columns = (await db.execute('PRAGMA table_info(vehicles)')).rows as unknown as { name: string }[];
+    expect(columns.some(c => c.name === 'driver_user_id')).toBe(true);
+  });
+
   it('backfills enable_cold_storage for a settings table that predates the column', async () => {
     const dir = mkdtempSync(join(tmpdir(), 'routeway-db-migration-test-'));
     const dbPath = join(dir, 'test.db');
