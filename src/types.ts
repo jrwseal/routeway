@@ -33,6 +33,7 @@ export interface Vehicle {
   departureTime: string;
   hasColdStorage?: boolean;
   coldStorageCapacity?: number;
+  driverUserId?: string | null;
 }
 
 export interface RouteLeg {
