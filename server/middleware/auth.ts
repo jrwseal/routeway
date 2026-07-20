@@ -28,7 +28,14 @@ export function parseCookies(header: string | undefined): Record<string, string>
     if (idx === -1) continue;
     const key = part.slice(0, idx).trim();
     const value = part.slice(idx + 1).trim();
-    if (key) out[key] = decodeURIComponent(value);
+    if (!key) continue;
+    try {
+      out[key] = decodeURIComponent(value);
+    } catch {
+      // Malformed percent-encoding in a single cookie pair; skip it and
+      // keep parsing the rest of the header instead of throwing.
+      continue;
+    }
   }
   return out;
 }
@@ -66,7 +73,7 @@ async function resolveUser(db: Client, req: Request): Promise<SessionUser | null
       SELECT u.id, u.username, u.role, u.display_name as displayName
       FROM sessions s
       JOIN users u ON u.id = s.user_id
-      WHERE s.token = ? AND s.expires_at > datetime('now')
+      WHERE s.token = ? AND s.expires_at > strftime('%Y-%m-%dT%H:%M:%fZ','now')
     `,
     args: [token],
   });
