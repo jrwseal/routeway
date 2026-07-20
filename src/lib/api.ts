@@ -1,4 +1,4 @@
-import { Vehicle, ProcessedData, OptimizationCriterion, RouteNode, RouteLeg } from '../types';
+import { Vehicle, ProcessedData, OptimizationCriterion, RouteNode, RouteLeg, RouteSummary } from '../types';
 
 const BASE = '/api';
 
@@ -75,4 +75,53 @@ export async function getProgress(): Promise<ProgressEntry[]> {
 
 export async function postProgress(routeIndex: number, currentStep: number, stepState: 'pending' | 'in_transit'): Promise<void> {
   await request('/plan/progress', { method: 'POST', body: JSON.stringify({ routeIndex, currentStep, stepState }) });
+}
+
+export interface CurrentUser {
+  id: string;
+  username: string;
+  role: 'admin' | 'driver';
+  displayName: string;
+}
+
+export interface DriverAccount {
+  id: string;
+  username: string;
+  displayName: string;
+  vehicleId: string | null;
+  vehicleName: string | null;
+}
+
+export async function login(username: string, password: string): Promise<CurrentUser> {
+  return request<CurrentUser>('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
+}
+
+export async function logout(): Promise<void> {
+  await request('/auth/logout', { method: 'POST' });
+}
+
+export async function getMe(): Promise<CurrentUser> {
+  return request<CurrentUser>('/auth/me');
+}
+
+export async function getDrivers(): Promise<DriverAccount[]> {
+  return request<DriverAccount[]>('/drivers');
+}
+
+export async function createDriver(username: string, password: string, displayName: string): Promise<DriverAccount> {
+  return request<DriverAccount>('/drivers', { method: 'POST', body: JSON.stringify({ username, password, displayName }) });
+}
+
+export async function updateDriver(id: string, updates: { password?: string; displayName?: string }): Promise<void> {
+  await request(`/drivers/${id}`, { method: 'PATCH', body: JSON.stringify(updates) });
+}
+
+export async function deleteDriver(id: string): Promise<void> {
+  await request(`/drivers/${id}`, { method: 'DELETE' });
+}
+
+export async function getMyRoute(): Promise<{ routeSummary: RouteSummary; legs: RouteLeg[] } | null> {
+  const { route } = await request<{ route: { routeSummary: RouteSummary; legs: RouteLeg[] } | null }>('/plan/my-route');
+  if (!route) return null;
+  return { routeSummary: route.routeSummary, legs: route.legs.map(reviveLeg) };
 }
