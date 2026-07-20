@@ -24,38 +24,92 @@ const samplePlan = () => ({
 
 describe('plan routes', () => {
   let app: ReturnType<typeof createApp>;
+  let agent: ReturnType<typeof request.agent>;
 
   beforeEach(async () => {
     app = createApp(await createDb(':memory:'));
+    agent = request.agent(app);
+    await agent.post('/api/auth/login').send({ username: 'admin', password: 'admin123' });
   });
 
   it('returns null when no plan exists yet', async () => {
-    const res = await request(app).get('/api/plan/active');
+    const res = await agent.get('/api/plan/active');
     expect(res.status).toBe(200);
     expect(res.body.plan).toBeNull();
   });
 
   it('can save a plan and read it back in full', async () => {
-    const saveRes = await request(app).post('/api/plan').send(samplePlan());
+    const saveRes = await agent.post('/api/plan').send(samplePlan());
     expect(saveRes.status).toBe(200);
 
-    const res = await request(app).get('/api/plan/active');
+    const res = await agent.get('/api/plan/active');
     expect(res.body.plan.legs).toHaveLength(1);
     expect(res.body.plan.routeSummaries[0].routeIndex).toBe(1);
   });
 
   it('resets progress to step 0 when a new plan is saved', async () => {
-    await request(app).post('/api/plan').send(samplePlan());
-    const progressRes = await request(app).get('/api/plan/progress');
+    await agent.post('/api/plan').send(samplePlan());
+    const progressRes = await agent.get('/api/plan/progress');
     expect(progressRes.body).toEqual([{ routeIndex: 1, currentStep: 0, stepState: 'pending' }]);
   });
 
   it('can push progress and read it back', async () => {
-    await request(app).post('/api/plan').send(samplePlan());
-    const postRes = await request(app).post('/api/plan/progress').send({ routeIndex: 1, currentStep: 1, stepState: 'in_transit' });
+    await agent.post('/api/plan').send(samplePlan());
+    const postRes = await agent.post('/api/plan/progress').send({ routeIndex: 1, currentStep: 1, stepState: 'in_transit' });
     expect(postRes.status).toBe(200);
 
-    const progressRes = await request(app).get('/api/plan/progress');
+    const progressRes = await agent.get('/api/plan/progress');
     expect(progressRes.body).toEqual([{ routeIndex: 1, currentStep: 1, stepState: 'in_transit' }]);
+  });
+
+  it('rejects unauthenticated access to /active', async () => {
+    const res = await request(app).get('/api/plan/active');
+    expect(res.status).toBe(401);
+  });
+
+  describe('driver scoping', () => {
+    async function setUpDriverWithRoute() {
+      await agent.post('/api/plan').send(samplePlan());
+      const driverRes = await agent.post('/api/drivers').send({ username: 'somchai', password: 'pass1234', displayName: 'สมชาย' });
+      await agent.put('/api/fleet').send({
+        vehicles: [
+          { id: '4w-1', type: '4-wheel', name: 'Truck 1', capacityCBM: 12, fuelConsumption: 0.12, fixedCost: 300, color: '#10B981', fuelPrice: 35, departureTime: '08:00', driverUserId: driverRes.body.id },
+        ],
+        driverWage: 60,
+      });
+      const driverAgent = request.agent(app);
+      await driverAgent.post('/api/auth/login').send({ username: 'somchai', password: 'pass1234' });
+      return driverAgent;
+    }
+
+    it('returns only the assigned route on /my-route', async () => {
+      const driverAgent = await setUpDriverWithRoute();
+      const res = await driverAgent.get('/api/plan/my-route');
+      expect(res.status).toBe(200);
+      expect(res.body.route.routeSummary.routeIndex).toBe(1);
+      expect(res.body.route.legs).toHaveLength(1);
+    });
+
+    it('returns route: null when no vehicle is assigned', async () => {
+      await agent.post('/api/drivers').send({ username: 'nobody', password: 'pass1234', displayName: 'ไม่มีรถ' });
+      const driverAgent = request.agent(app);
+      await driverAgent.post('/api/auth/login').send({ username: 'nobody', password: 'pass1234' });
+
+      const res = await driverAgent.get('/api/plan/my-route');
+      expect(res.status).toBe(200);
+      expect(res.body.route).toBeNull();
+    });
+
+    it('allows a driver to push progress for their own route', async () => {
+      const driverAgent = await setUpDriverWithRoute();
+      const res = await driverAgent.post('/api/plan/progress').send({ routeIndex: 1, currentStep: 1, stepState: 'in_transit' });
+      expect(res.status).toBe(200);
+    });
+
+    it('rejects a driver pushing progress for a route that is not theirs', async () => {
+      const driverAgent = await setUpDriverWithRoute();
+      const res = await driverAgent.post('/api/plan/progress').send({ routeIndex: 99, currentStep: 1, stepState: 'in_transit' });
+      expect(res.status).toBe(403);
+    });
   });
 });
