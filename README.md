@@ -18,3 +18,7 @@ View your app in AI Studio: https://ai.studio/apps/8b6d252f-a99f-4f04-b999-b60e8
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
 3. Run the app:
    `npm run dev`
+
+## Default login
+
+On first run, an admin account is seeded automatically: username `admin`, password `admin123`. Change this password (or create a new admin and delete this one) before using the app with real data — see the "จัดการคนขับ" panel is for driver accounts only; there's currently no in-app way to change the admin's own password, so do it directly against the `users` table if needed.
