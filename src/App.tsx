@@ -15,12 +15,14 @@ import { validateColdStorageFleet } from './lib/coldStorageValidation';
 import { AlertCircle, Loader2, Menu } from 'lucide-react';
 import FleetConfigModal from './components/FleetConfigModal';
 import CareTab from './care/CareTab';
-import CareDriverDemo from './care/CareDriverDemo';
-import { careSampleNodes } from './data/careSampleData';
-import { careSampleFleet } from './data/careSampleFleet';
+import DriverShell from './components/DriverShell';
+import AdminDriversPanel from './components/AdminDriversPanel';
+import { getMe, logout as apiLogout, CurrentUser } from './lib/api';
 
 export default function App() {
-  const [isSignedIn, setIsSignedIn] = useState(false);
+  const [currentUser, setCurrentUser] = useState<CurrentUser | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [isDriversManagerOpen, setIsDriversManagerOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [processedData, setProcessedData] = useState<ProcessedData | null>(null);
@@ -52,8 +54,12 @@ export default function App() {
   };
 
   useEffect(() => {
-    loadFleetFromServer();
+    getMe().then(setCurrentUser).catch(() => setCurrentUser(null)).finally(() => setAuthChecked(true));
   }, []);
+
+  useEffect(() => {
+    if (currentUser?.role === 'admin') loadFleetFromServer();
+  }, [currentUser]);
 
   const handleDataLoaded = (nodes: RouteNode[]) => {
     setComparisonData(null);
@@ -176,15 +182,20 @@ export default function App() {
     }
   };
 
-  const careQuery = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
-  if (careQuery?.get('care') === '1' && careQuery?.get('driver') === '1') {
-    // Standalone mobile driver check-in screen — deliberately outside the desktop Sidebar shell.
-    const careBaseParams = { fleetPool: careSampleFleet, avgSpeed: 40, driverWage: 60, algorithm: 'or-opt-sa' as const, applyTwoOpt: false };
-    return <CareDriverDemo nodes={careSampleNodes} baseParams={careBaseParams} />;
+  if (!authChecked) {
+    return (
+      <div className="h-screen w-full flex items-center justify-center bg-neutral-canvas">
+        <Loader2 className="w-10 h-10 text-fleet-navy animate-spin" />
+      </div>
+    );
   }
 
-  if (!isSignedIn) {
-    return <LoginMockup onSignIn={() => setIsSignedIn(true)} />;
+  if (!currentUser) {
+    return <LoginMockup onSignIn={setCurrentUser} />;
+  }
+
+  if (currentUser.role === 'driver') {
+    return <DriverShell user={currentUser} onLoggedOut={() => setCurrentUser(null)} />;
   }
 
   return (
@@ -213,6 +224,8 @@ export default function App() {
         avgSpeed={avgSpeed}
         setAvgSpeed={setAvgSpeed}
         setIsFleetConfigOpen={setIsFleetConfigOpen}
+        setIsDriversManagerOpen={setIsDriversManagerOpen}
+        onLogout={() => { apiLogout().catch(() => {}); setCurrentUser(null); }}
         isMobileNavOpen={isMobileNavOpen}
         onCloseMobileNav={() => setIsMobileNavOpen(false)}
       />
@@ -297,6 +310,11 @@ export default function App() {
         isOpen={isFleetConfigOpen}
         onClose={() => setIsFleetConfigOpen(false)}
         onSaved={loadFleetFromServer}
+      />
+
+      <AdminDriversPanel
+        isOpen={isDriversManagerOpen}
+        onClose={() => setIsDriversManagerOpen(false)}
       />
 
       {/* Params Setup Modal */}
