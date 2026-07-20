@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import type { Client } from '@libsql/client';
+import { requireRole } from '../middleware/auth.js';
 
 interface VehicleRow {
   id: string;
@@ -11,6 +12,7 @@ interface VehicleRow {
   color: string;
   fuel_price: number;
   departure_time: string;
+  driver_user_id: string | null;
 }
 
 interface SettingsRow {
@@ -20,6 +22,7 @@ interface SettingsRow {
 
 export function fleetRouter(db: Client): Router {
   const router = Router();
+  router.use(requireRole(db, 'admin'));
 
   router.get('/', async (req, res) => {
     const rowsResult = await db.execute('SELECT * FROM vehicles ORDER BY type, id');
@@ -37,6 +40,7 @@ export function fleetRouter(db: Client): Router {
         color: r.color,
         fuelPrice: r.fuel_price,
         departureTime: r.departure_time,
+        driverUserId: r.driver_user_id,
       })),
       driverWage: settings.driver_wage,
       enableColdStorage: Boolean(settings.enable_cold_storage),
@@ -63,8 +67,8 @@ export function fleetRouter(db: Client): Router {
     await db.batch([
       { sql: 'DELETE FROM vehicles', args: [] },
       ...vehicles.map((v: any) => ({
-        sql: 'INSERT INTO vehicles (id, type, name, capacity_cbm, fuel_consumption, fixed_cost, color, fuel_price, departure_time) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-        args: [v.id, v.type, v.name, v.capacityCBM, v.fuelConsumption, v.fixedCost, v.color, v.fuelPrice, v.departureTime],
+        sql: 'INSERT INTO vehicles (id, type, name, capacity_cbm, fuel_consumption, fixed_cost, color, fuel_price, departure_time, driver_user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        args: [v.id, v.type, v.name, v.capacityCBM, v.fuelConsumption, v.fixedCost, v.color, v.fuelPrice, v.departureTime, v.driverUserId ?? null],
       })),
       { sql: 'UPDATE settings SET driver_wage = ?, enable_cold_storage = ? WHERE id = 1', args: [driverWage ?? 60, enableColdStorage ? 1 : 0] },
     ], 'write');
