@@ -1,6 +1,6 @@
 ﻿import React from 'react';
 import { RouteNode, ProcessedData } from '../types';
-import { Truck, Navigation, Leaf, UploadCloud, Info, BarChart, X, Snowflake } from 'lucide-react';
+import { Truck, Navigation, Leaf, UploadCloud, Info, BarChart, X, Snowflake, LogOut } from 'lucide-react';
 import { readManifestFile } from '../lib/csvParser';
 import AppLogo from './AppLogo';
 
@@ -14,13 +14,15 @@ interface SidebarProps {
   avgSpeed: number;
   setAvgSpeed: (val: number) => void;
   setIsFleetConfigOpen: (isOpen: boolean) => void;
+  setIsDriversManagerOpen: (isOpen: boolean) => void;
+  onLogout: () => void;
   isMobileNavOpen: boolean;
   onCloseMobileNav: () => void;
 }
 
 export default function Sidebar({
   currentTab, setCurrentTab, onDataLoaded, isProcessing, hasData, hasComparison,
-  avgSpeed, setAvgSpeed, setIsFleetConfigOpen, isMobileNavOpen, onCloseMobileNav
+  avgSpeed, setAvgSpeed, setIsFleetConfigOpen, setIsDriversManagerOpen, onLogout, isMobileNavOpen, onCloseMobileNav
 }: SidebarProps) {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,6 +85,13 @@ export default function Sidebar({
           *หมายเหตุ: หากไม่ได้ทำการตั้งค่ากองรถ ระบบจะคำนวณโดยอิงตามค่ามาตรฐาน (Standard Pool) ของระบบโดยอัตโนมัติ
         </p>
 
+        <button
+          onClick={() => setIsDriversManagerOpen(true)}
+          className="w-full flex items-center justify-center bg-white border border-slate-300 text-slate-700 py-2 px-4 rounded-md text-sm font-bold shadow-sm hover:bg-slate-50 transition-colors"
+        >
+          👤 จัดการคนขับ (Drivers)
+        </button>
+
         <label className="text-sm font-semibold text-fleet-navy">Vehicle Manifest (CSV)</label>
         <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:bg-slate-50 transition-colors cursor-pointer relative">
           <UploadCloud className="w-6 h-6 mx-auto mb-2 text-slate-400" />
@@ -117,6 +126,12 @@ export default function Sidebar({
             {item.label}
           </button>
         ))}
+        <button
+          onClick={onLogout}
+          className="mt-4 flex items-center px-4 py-3 rounded-md text-sm font-medium text-slate-500 hover:bg-slate-100 hover:text-alert-red transition-colors"
+        >
+          <LogOut className="w-4 h-4 mr-2" /> ออกจากระบบ
+        </button>
       </nav>
       </div>
     </>
