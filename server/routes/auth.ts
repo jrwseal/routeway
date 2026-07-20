@@ -17,10 +17,7 @@ export function authRouter(db: Client): Router {
   router.post('/login', async (req, res) => {
     const { username, password } = req.body ?? {};
     if (typeof username !== 'string' || typeof password !== 'string') {
-      // Same generic 401 (not 400) as the wrong-password/unknown-username
-      // branches below, so malformed input doesn't leak which check failed
-      // and callers can treat every login rejection uniformly.
-      res.status(401).json({ error: 'ชื่อผู้ใช้หรือรหัสผ่านไม่ถูกต้อง' });
+      res.status(400).json({ error: 'username and password are required' });
       return;
     }
 

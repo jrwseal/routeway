@@ -27,9 +27,10 @@ describe('auth routes', () => {
     expect(res.status).toBe(401);
   });
 
-  it('rejects a login with a missing/wrong-type field with 401 (not 400)', async () => {
+  it('rejects a login with a missing/wrong-type field with 400', async () => {
     const res = await request(app).post('/api/auth/login').send({ username: 'admin' });
-    expect(res.status).toBe(401);
+    expect(res.status).toBe(400);
+    expect(res.body.error).toBe('username and password are required');
   });
 
   it('persists the session across requests via the cookie', async () => {
