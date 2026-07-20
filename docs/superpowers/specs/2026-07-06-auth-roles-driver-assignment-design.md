@@ -1,5 +1,7 @@
 # Auth, Roles & Driver Assignment — Design Spec
 
+> **Superseded** by `2026-07-20-auth-roles-driver-assignment-design.md`. This spec targeted a pre-libsql architecture (separate better-sqlite3 process, JWT auth) that was never implemented. Kept for history only.
+
 ## Problem
 
 RouteWay Intelligence is currently a pure client-side SPA: no backend, no database, no auth. All state (fleet config, computed routes, delivery progress) lives only in the planner's browser memory and is lost on reload. There is no way to give a driver their own restricted login on a separate device that shows only their assigned route.
