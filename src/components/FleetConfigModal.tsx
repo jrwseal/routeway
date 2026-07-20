@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Vehicle } from '../types';
-import { getFleet, saveFleet } from '../lib/api';
+import { getFleet, saveFleet, getDrivers, DriverAccount } from '../lib/api';
 import { Truck, Plus, Trash2, Save, X } from 'lucide-react';
 import { VEHICLE_TYPE_DEFS, getAvailableVehicleTypes, canDisableColdStorage } from '../lib/fleetTypes';
 
@@ -15,14 +15,16 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
   const [driverWage, setDriverWage] = useState(60);
   const [enableColdStorage, setEnableColdStorage] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [drivers, setDrivers] = useState<DriverAccount[]>([]);
 
   useEffect(() => {
     if (!isOpen) return;
     setIsLoading(true);
-    getFleet().then(fleet => {
+    Promise.all([getFleet(), getDrivers()]).then(([fleet, driverList]) => {
       setVehicles(fleet.vehicles);
       setDriverWage(fleet.driverWage);
       setEnableColdStorage(fleet.enableColdStorage);
+      setDrivers(driverList);
       setIsLoading(false);
     });
   }, [isOpen]);
@@ -46,6 +48,7 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
       color: def.color,
       fuelPrice: 35,
       departureTime: '08:00',
+      driverUserId: null,
     }]);
   };
 
@@ -144,6 +147,7 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
                         <th className="pb-2 pr-2">ราคาน้ำมัน (บาท/ลิตร)</th>
                         <th className="pb-2 pr-2">Fixed Cost</th>
                         <th className="pb-2 pr-2">เวลาออกเดินทาง</th>
+                        <th className="pb-2 pr-2">คนขับ</th>
                         <th className="pb-2 w-8"></th>
                       </tr>
                     </thead>
@@ -178,6 +182,18 @@ export default function FleetConfigModal({ isOpen, onClose, onSaved }: FleetConf
                           </td>
                           <td className="py-2 pr-2">
                             <input type="time" value={v.departureTime} onChange={(e) => updateVehicle(v.id, 'departureTime', e.target.value)} className="border border-slate-300 rounded px-2 py-1" />
+                          </td>
+                          <td className="py-2 pr-2">
+                            <select
+                              value={v.driverUserId ?? ''}
+                              onChange={(e) => updateVehicle(v.id, 'driverUserId', e.target.value || null)}
+                              className="border border-slate-300 rounded px-2 py-1 bg-white"
+                            >
+                              <option value="">ยังไม่ระบุ</option>
+                              {drivers.map(d => (
+                                <option key={d.id} value={d.id}>{d.displayName}</option>
+                              ))}
+                            </select>
                           </td>
                           <td className="py-2 text-right">
                             <button onClick={() => removeVehicle(v.id)} className="text-slate-400 hover:text-alert-red">
