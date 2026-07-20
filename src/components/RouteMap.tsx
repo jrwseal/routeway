@@ -29,7 +29,22 @@ function MapController({ legs, activeRouteIndices }: { legs: RouteLeg[], activeR
   return null;
 }
 
-export default function RouteMap({ data, onViewAlgorithm }: { data: ProcessedData; onViewAlgorithm?: () => void }) {
+export interface EmergencyRerouteView {
+  routeIndex: number;
+  brokenDownAt: RouteLeg['toNode'];
+  originalRemainingLegs: RouteLeg[];
+  newLegs: RouteLeg[];
+}
+
+export default function RouteMap({
+  data,
+  onViewAlgorithm,
+  emergencyView,
+}: {
+  data: ProcessedData;
+  onViewAlgorithm?: () => void;
+  emergencyView?: EmergencyRerouteView | null;
+}) {
   const allRoutes = data.routeSummaries.map(r => r.routeIndex);
   const [activeRouteIndices, setActiveRouteIndices] = useState<number[]>(allRoutes);
   const [isFilterOpen, setIsFilterOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
@@ -114,18 +129,58 @@ export default function RouteMap({ data, onViewAlgorithm }: { data: ProcessedDat
 
         {data.legs.map((leg, idx) => {
           if (!activeRouteIndices.includes(leg.routeIndex)) return null;
+          const isSuperseded = emergencyView?.routeIndex === leg.routeIndex &&
+            emergencyView.originalRemainingLegs.some(rl => rl.toNode.lat === leg.toNode.lat && rl.toNode.lon === leg.toNode.lon);
+          if (isSuperseded) return null;
           const routeSummary = data.routeSummaries.find(r => r.routeIndex === leg.routeIndex);
           const color = routeSummary?.vehicle.color || '#1E3A8A';
           return (
-            <Polyline 
+            <Polyline
               key={idx}
-              positions={getPolylinePositions(leg)} 
-              color={color} 
-              weight={5} 
-              opacity={0.8} 
+              positions={getPolylinePositions(leg)}
+              color={color}
+              weight={5}
+              opacity={0.8}
             />
           );
         })}
+
+        {emergencyView && emergencyView.originalRemainingLegs.map((leg, idx) => (
+          <Polyline
+            key={`old-${idx}`}
+            positions={getPolylinePositions(leg)}
+            color="#94A3B8"
+            weight={3}
+            opacity={0.35}
+            dashArray="6 8"
+          />
+        ))}
+
+        {emergencyView && emergencyView.newLegs.map((leg, idx) => (
+          <Polyline
+            key={`new-${idx}`}
+            positions={getPolylinePositions(leg)}
+            color="#F2545B"
+            weight={6}
+            opacity={0.95}
+          />
+        ))}
+
+        {emergencyView && (
+          <Marker
+            position={[emergencyView.brokenDownAt.lat, emergencyView.brokenDownAt.lon]}
+            icon={L.divIcon({
+              html: `<div style="font-size:26px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));">🚨</div>`,
+              className: '',
+              iconSize: [30, 30],
+              iconAnchor: [15, 15],
+            })}
+          >
+            <Tooltip direction="top" offset={[0, -10]} opacity={1} permanent className="font-bold text-xs bg-alert-red text-white border-none shadow-md">
+              รถเสีย ณ จุดนี้
+            </Tooltip>
+          </Marker>
+        )}
 
         <MapController legs={data.legs} activeRouteIndices={activeRouteIndices} />
       </MapContainer>

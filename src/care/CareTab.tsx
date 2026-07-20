@@ -10,6 +10,8 @@ import { getParcelExposureRows, getExposureSummary } from './selectors';
 import { getDeliveryLog, STORAGE_KEY } from './deliveryLog';
 import { joinDeliveryOutcomes, getActualOnTimePercent, getDailyOnTimeTrend, getWasteReductionPercent } from './impactSelectors';
 import { getNodeDeviations, getMovingAverageDeviationByNode, getAccuracyTrend } from './calibration';
+import { simulateEmergencyReroute, type EmergencyRerouteResult } from './emergencyReroute';
+import { AlertTriangle, X } from 'lucide-react';
 
 interface CareTabProps {
   data: ProcessedData;
@@ -23,10 +25,36 @@ export default function CareTab({ data: initialData, fleetPool, avgSpeed, driver
   const [data, setData] = useState(initialData);
   const [baselineData, setBaselineData] = useState<ProcessedData | null>(null);
   const [deliveryLog, setDeliveryLog] = useState(() => getDeliveryLog());
+  const [emergencyResult, setEmergencyResult] = useState<EmergencyRerouteResult | null>(null);
 
   useEffect(() => {
     setData(initialData);
   }, [initialData]);
+
+  // Route recomputed (slider/manifest change) -> emergency simulation is stale, drop it.
+  useEffect(() => {
+    setEmergencyResult(null);
+  }, [data]);
+
+  // Phase 4 (stretch): manual "vehicle broke down" trigger. Picks a route
+  // with stops left after some point, re-sequences only the undelivered
+  // remainder from the breakdown point via cheapest insertion — no live
+  // GPS/traffic feed, per the scoped-down spec.
+  const triggerEmergency = () => {
+    const routeIndices = data.routeSummaries.map(r => r.routeIndex).sort(() => Math.random() - 0.5);
+    for (const routeIndex of routeIndices) {
+      const stops = data.legs
+        .filter(l => l.routeIndex === routeIndex && !l.isReturnToDepot)
+        .map(l => l.toNode);
+      if (stops.length < 2) continue;
+      const breakIdx = Math.floor(Math.random() * (stops.length - 1));
+      const result = simulateEmergencyReroute(data, routeIndex, stops[breakIdx]);
+      if (result) {
+        setEmergencyResult(result);
+        return;
+      }
+    }
+  };
 
   // Self-calibration (Phase 3.5): learn each stop's historical planned-vs-actual
   // delay from Phase 2.5 check-ins and feed it back in as a travel-time
@@ -114,7 +142,62 @@ export default function CareTab({ data: initialData, fleetPool, avgSpeed, driver
         </CardContent>
       </Card>
 
-      <RouteMap data={data} />
+      <Card className="mb-6">
+        <CardContent className="pt-6 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-bold text-fleet-navy flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-alert-red" />
+              จำลองเหตุการณ์ฉุกเฉิน
+            </p>
+            <p className="text-xs text-slate-500 mt-0.5">
+              จำลองรถเสีย/ติดขัดกลางทาง แล้ว re-optimize เฉพาะจุดที่ยังไม่ส่ง (Cheapest Insertion)
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {emergencyResult && (
+              <button
+                type="button"
+                onClick={() => setEmergencyResult(null)}
+                className="flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-medium text-slate-500 hover:bg-slate-100"
+              >
+                <X className="w-3.5 h-3.5" /> ล้าง
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={triggerEmergency}
+              className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-alert-red hover:bg-red-600 transition-colors"
+            >
+              จำลองเหตุการณ์ฉุกเฉิน
+            </button>
+          </div>
+        </CardContent>
+        {emergencyResult && (
+          <CardContent className="pt-0 text-sm text-slate-600 border-t border-slate-100 mt-2 pt-4">
+            <p>
+              รถเสียที่ <span className="font-medium text-fleet-navy">{emergencyResult.brokenDownAt.location}</span>
+              {' '}— จัดลำดับใหม่ {emergencyResult.newLegs.length} จุดที่เหลือ ใช้เวลา{' '}
+              <span className="font-bold text-fleet-navy">{emergencyResult.elapsedMs.toFixed(1)} ms</span>
+              {emergencyResult.elapsedMs < 1000 ? ' (เร็วพอสำหรับ real-time ✅)' : ''}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              เดิม: {emergencyResult.originalRemainingLegs.map(l => l.toNode.location).join(' → ')}
+              <br />
+              ใหม่: {emergencyResult.newLegs.map(l => l.toNode.location).join(' → ')}
+            </p>
+          </CardContent>
+        )}
+      </Card>
+
+      <RouteMap
+        data={data}
+        emergencyView={emergencyResult ? {
+          routeIndex: emergencyResult.routeIndex,
+          brokenDownAt: emergencyResult.brokenDownAt,
+          originalRemainingLegs: emergencyResult.originalRemainingLegs,
+          newLegs: emergencyResult.newLegs,
+        } : null}
+      />
 
       <div className="mt-8">
         <h2 className="text-xl font-bold text-fleet-navy mb-4">Impact Dashboard</h2>
