@@ -50,12 +50,12 @@ const createPinIcon = (color: string, size: number) =>
   });
 
 const depotIcon = createPinIcon("black", 32);
-const customerIcon = createPinIcon("#ef4444", 28);
-const visitedCustomerIcon = createPinIcon("#10b981", 28);
+const customerIcon = createPinIcon("var(--color-alert-red)", 28);
+const visitedCustomerIcon = createPinIcon("var(--color-signal-green)", 28);
 const driverLiveIcon = L.divIcon({
   html: `
   <div style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#2563eb" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="var(--color-driver-live)" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
       <circle cx="12" cy="12" r="10"></circle>
       <circle cx="12" cy="12" r="3" fill="white"></circle>
     </svg>
@@ -166,7 +166,9 @@ export default function DriverPortal({
   // to the server every 20s so admin's live view can see it.
   const isDriverSession = lockedRouteIndex !== undefined;
   const coordsRef = useRef(coords);
-  coordsRef.current = coords;
+  useEffect(() => {
+    coordsRef.current = coords;
+  }, [coords]);
   useEffect(() => {
     if (!isDriverSession) return;
     const tick = () => {
@@ -243,7 +245,7 @@ export default function DriverPortal({
       </div>
 
       {isCompleted ? (
-        <Card className="bg-[#F0FDF4] border-signal-green shadow-md flex-shrink-0">
+        <Card className="bg-green-bg-tint border-signal-green shadow-md flex-shrink-0">
           <CardContent className="flex flex-col items-center justify-center p-12 text-center">
             <div className="w-20 h-20 bg-signal-green bg-opacity-20 rounded-full flex items-center justify-center mb-6">
               <PackageCheck className="w-10 h-10 text-signal-green" />
@@ -268,7 +270,7 @@ export default function DriverPortal({
           {/* Active Navigation Panel */}
           <div className="w-full lg:w-1/3 flex flex-col gap-6 flex-shrink-0 overflow-y-auto pr-2">
             {isDriverSession && activeDeviation && (
-              <div className="bg-[#FEF3C7] border border-amber-warning rounded-lg p-3 flex flex-col gap-2">
+              <div className="bg-amber-warning-bg border border-amber-warning rounded-lg p-3 flex flex-col gap-2">
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 text-[#92400E] flex-shrink-0 mt-0.5" />
                   <p className="text-xs font-semibold text-[#92400E]">
@@ -413,7 +415,7 @@ export default function DriverPortal({
                   Sequenced Manifest Activity
                 </CardTitle>
                 {routeWaitingMinutes > 0 && (
-                  <span className="text-xs font-bold text-[#92400E] bg-[#FEF3C7] px-2 py-1 rounded">
+                  <span className="text-xs font-bold text-[#92400E] bg-amber-warning-bg px-2 py-1 rounded">
                     ⏱ รอรวม {(routeWaitingMinutes / 60).toFixed(1)} ชม.
                   </span>
                 )}
@@ -429,7 +431,7 @@ export default function DriverPortal({
                         key={index}
                         className={`p-3 rounded-lg border ${
                           isActive
-                            ? "bg-[#EFF6FF] border-[#BFDBFE]"
+                            ? "bg-blue-bg-tint border-[#BFDBFE]"
                             : isPast
                               ? "bg-slate-50 border-slate-200 opacity-60"
                               : "bg-white border-slate-200"
@@ -443,13 +445,13 @@ export default function DriverPortal({
                           </span>
                           {isPast ? (
                             <span
-                              className="text-xs bg-[#D1FAE5] px-2 py-0.5 rounded flex items-center"
+                              className="text-xs bg-green-bg-tint-solid px-2 py-0.5 rounded flex items-center"
                               style={{ color: "#047857", fontWeight: "bold" }}
                             >
                               ✅ ส่งเสร็จแล้ว
                             </span>
                           ) : isActive && stepState === "in_transit" ? (
-                            <span className="text-xs bg-[#FEF3C7] px-2 py-0.5 rounded flex items-center text-[#92400E] font-bold">
+                            <span className="text-xs bg-amber-warning-bg px-2 py-0.5 rounded flex items-center text-[#92400E] font-bold">
                               🚚 กำลังไปส่ง
                             </span>
                           ) : null}

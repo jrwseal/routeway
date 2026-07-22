@@ -11,7 +11,13 @@
   --color-amber-warning-deep: #D97706;
   --color-route-blue: #3B82F6;
   --color-route-orange: #F97316;
+  --color-driver-live: #7C3AED;
   --color-neutral-canvas: #F8FAFC;
+
+  --color-green-bg-tint: #F0FDF4;
+  --color-green-bg-tint-solid: #D1FAE5;
+  --color-amber-warning-bg: #FEF3C7;
+  --color-blue-bg-tint: #EFF6FF;
 
   --color-care-navy: #0B2545;
   --color-care-navy-surface: #0F2E52;
