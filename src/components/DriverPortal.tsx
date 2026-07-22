@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { ProcessedData, RouteLeg } from "../types";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import {
@@ -16,10 +16,21 @@ import {
   Clock,
   PackageCheck,
   AlertCircle,
+  AlertTriangle,
   MapPin,
   Truck,
 } from "lucide-react";
 import { format } from "date-fns";
+import { useGeolocation } from "../care/useGeolocation";
+import { useRouteDeviationMonitor } from "../care/useRouteDeviationMonitor";
+import { legsToPolyline } from "../lib/routeDeviation";
+import { setReasonForLatest, type DeviationReason } from "../care/deviationLog";
+
+const DEVIATION_REASON_LABELS: { value: DeviationReason; label: string }[] = [
+  { value: "traffic", label: "รถติด" },
+  { value: "road-closed", label: "ถนนปิด" },
+  { value: "other-stop", label: "แวะจุดอื่น" },
+];
 
 // Create custom icons for Depot, Next Stop
 const createPinIcon = (color: string, size: number) =>
@@ -129,6 +140,14 @@ export default function DriverPortal({
   const isCompleted = currentStep >= routeLegs.length;
   const activeLeg = isCompleted ? null : routeLegs[currentStep];
 
+  const { coords } = useGeolocation();
+  const routePolyline = useMemo(() => legsToPolyline(routeLegs), [routeLegs]);
+  const { activeDeviation, dismissActiveDeviation } = useRouteDeviationMonitor(coords, routePolyline);
+  const handleDeviationReason = (reason: DeviationReason) => {
+    setReasonForLatest(reason);
+    dismissActiveDeviation();
+  };
+
   const handleNextStep = () => {
     setCurrentStep(currentStep + 1);
     setStepState("pending");
@@ -206,6 +225,34 @@ export default function DriverPortal({
         <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
           {/* Active Navigation Panel */}
           <div className="w-full lg:w-1/3 flex flex-col gap-6 flex-shrink-0 overflow-y-auto pr-2">
+            {activeDeviation && (
+              <div className="bg-[#FEF3C7] border border-amber-warning rounded-lg p-3 flex flex-col gap-2">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="w-4 h-4 text-amber-warning-deep flex-shrink-0 mt-0.5" />
+                  <p className="text-xs font-semibold text-amber-warning-deep">
+                    ออกนอกเส้นทางมา {Math.round(activeDeviation.durationMinutes)} นาที ({activeDeviation.distanceFromRoute}ม.)
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  {DEVIATION_REASON_LABELS.map(({ value, label }) => (
+                    <button
+                      key={value}
+                      onClick={() => handleDeviationReason(value)}
+                      className="flex-1 rounded-md py-1.5 text-[11px] font-medium bg-white border border-slate-300 text-slate-700 hover:bg-slate-50"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                  <button
+                    onClick={dismissActiveDeviation}
+                    className="px-2 text-[11px] text-slate-500"
+                  >
+                    ปิด
+                  </button>
+                </div>
+              </div>
+            )}
+
             <Card className="border border-fleet-navy shadow-md">
               <CardHeader className="pb-2 bg-slate-50 border-b">
                 <CardTitle className="text-xs uppercase tracking-wider text-slate-500 font-semibold flex items-center">
