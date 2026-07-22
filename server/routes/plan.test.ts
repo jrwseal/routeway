@@ -111,5 +111,43 @@ describe('plan routes', () => {
       const res = await driverAgent.post('/api/plan/progress').send({ routeIndex: 99, currentStep: 1, stepState: 'in_transit' });
       expect(res.status).toBe(403);
     });
+
+    it('lets a driver post their own location and an admin read it back', async () => {
+      const driverAgent = await setUpDriverWithRoute();
+      const postRes = await driverAgent.post('/api/plan/location').send({ lat: 13.28, lon: 100.92 });
+      expect(postRes.status).toBe(200);
+
+      const res = await agent.get('/api/plan/locations');
+      expect(res.status).toBe(200);
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0]).toMatchObject({ displayName: 'สมชาย', vehicleId: '4w-1', lat: 13.28, lon: 100.92 });
+    });
+
+    it('overwrites the previous location on repeated posts instead of accumulating rows', async () => {
+      const driverAgent = await setUpDriverWithRoute();
+      await driverAgent.post('/api/plan/location').send({ lat: 13.28, lon: 100.92 });
+      await driverAgent.post('/api/plan/location').send({ lat: 13.30, lon: 100.90 });
+
+      const res = await agent.get('/api/plan/locations');
+      expect(res.body).toHaveLength(1);
+      expect(res.body[0]).toMatchObject({ lat: 13.30, lon: 100.90 });
+    });
+
+    it('rejects an admin posting a location (drivers only)', async () => {
+      const res = await agent.post('/api/plan/location').send({ lat: 13.28, lon: 100.92 });
+      expect(res.status).toBe(403);
+    });
+
+    it('rejects a non-admin reading /locations', async () => {
+      const driverAgent = await setUpDriverWithRoute();
+      const res = await driverAgent.get('/api/plan/locations');
+      expect(res.status).toBe(403);
+    });
+
+    it('rejects a location post with non-numeric coordinates', async () => {
+      const driverAgent = await setUpDriverWithRoute();
+      const res = await driverAgent.post('/api/plan/location').send({ lat: 'x', lon: 100.92 });
+      expect(res.status).toBe(400);
+    });
   });
 });

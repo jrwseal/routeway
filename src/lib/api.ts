@@ -125,3 +125,21 @@ export async function getMyRoute(): Promise<{ routeSummary: RouteSummary; legs: 
   if (!route) return null;
   return { routeSummary: route.routeSummary, legs: route.legs.map(reviveLeg) };
 }
+
+export async function postLocation(lat: number, lon: number): Promise<void> {
+  await request('/plan/location', { method: 'POST', body: JSON.stringify({ lat, lon }) });
+}
+
+export interface DriverLocation {
+  userId: string;
+  displayName: string;
+  vehicleId: string | null;
+  vehicleName: string | null;
+  lat: number;
+  lon: number;
+  updatedAt: string;
+}
+
+export async function getLocations(): Promise<DriverLocation[]> {
+  return request<DriverLocation[]>('/plan/locations');
+}

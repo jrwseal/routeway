@@ -71,6 +71,13 @@ export async function createDb(url: string, authToken?: string): Promise<Client>
       created_at TEXT NOT NULL DEFAULT (datetime('now')),
       expires_at TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS driver_locations (
+      user_id TEXT PRIMARY KEY REFERENCES users(id),
+      lat REAL NOT NULL,
+      lon REAL NOT NULL,
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
   `);
 
   const settingsCount = (await db.execute('SELECT COUNT(*) as count FROM settings')).rows[0].count as number;

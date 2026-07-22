@@ -25,6 +25,7 @@ import { useGeolocation } from "../care/useGeolocation";
 import { useRouteDeviationMonitor } from "../care/useRouteDeviationMonitor";
 import { legsToPolyline } from "../lib/routeDeviation";
 import { setReasonForLatest, type DeviationReason } from "../care/deviationLog";
+import { postLocation, getLocations, type DriverLocation } from "../lib/api";
 
 const DEVIATION_REASON_LABELS: { value: DeviationReason; label: string }[] = [
   { value: "traffic", label: "รถติด" },
@@ -51,6 +52,19 @@ const createPinIcon = (color: string, size: number) =>
 const depotIcon = createPinIcon("black", 32);
 const customerIcon = createPinIcon("#ef4444", 28);
 const visitedCustomerIcon = createPinIcon("#10b981", 28);
+const driverLiveIcon = L.divIcon({
+  html: `
+  <div style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="#2563eb" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 26px; height: 26px;">
+      <circle cx="12" cy="12" r="10"></circle>
+      <circle cx="12" cy="12" r="3" fill="white"></circle>
+    </svg>
+  </div>`,
+  className: "",
+  iconSize: [26, 26],
+  iconAnchor: [13, 13],
+  tooltipAnchor: [0, -13],
+});
 
 // Component to handle map bounds and resizing
 function MapController({ leg }: { leg: RouteLeg | null }) {
@@ -148,6 +162,34 @@ export default function DriverPortal({
     dismissActiveDeviation();
   };
 
+  // Real driver session (route locked to their own vehicle): push our own GPS
+  // to the server every 20s so admin's live view can see it.
+  const isDriverSession = lockedRouteIndex !== undefined;
+  const coordsRef = useRef(coords);
+  coordsRef.current = coords;
+  useEffect(() => {
+    if (!isDriverSession) return;
+    const tick = () => {
+      const c = coordsRef.current;
+      if (c) postLocation(c.lat, c.lon).catch(() => {});
+    };
+    tick();
+    const id = setInterval(tick, 20000);
+    return () => clearInterval(id);
+  }, [isDriverSession]);
+
+  // Admin preview (no locked route): poll everyone's last-known location.
+  const [driverLocations, setDriverLocations] = useState<DriverLocation[]>([]);
+  useEffect(() => {
+    if (isDriverSession) return;
+    const tick = () => {
+      getLocations().then(setDriverLocations).catch(() => {});
+    };
+    tick();
+    const id = setInterval(tick, 15000);
+    return () => clearInterval(id);
+  }, [isDriverSession]);
+
   const handleNextStep = () => {
     setCurrentStep(currentStep + 1);
     setStepState("pending");
@@ -225,7 +267,7 @@ export default function DriverPortal({
         <div className="flex flex-col lg:flex-row gap-6 flex-1 min-h-0">
           {/* Active Navigation Panel */}
           <div className="w-full lg:w-1/3 flex flex-col gap-6 flex-shrink-0 overflow-y-auto pr-2">
-            {activeDeviation && (
+            {isDriverSession && activeDeviation && (
               <div className="bg-[#FEF3C7] border border-amber-warning rounded-lg p-3 flex flex-col gap-2">
                 <div className="flex items-start gap-2">
                   <AlertTriangle className="w-4 h-4 text-amber-warning-deep flex-shrink-0 mt-0.5" />
@@ -496,6 +538,15 @@ export default function DriverPortal({
                   weight={5}
                   opacity={0.8}
                 />
+
+                {!isDriverSession &&
+                  driverLocations.map((loc) => (
+                    <Marker key={loc.userId} position={[loc.lat, loc.lon]} icon={driverLiveIcon}>
+                      <Tooltip direction="top" offset={[0, -10]} opacity={1}>
+                        {loc.displayName} ({loc.vehicleName ?? "ยังไม่ผูกรถ"})
+                      </Tooltip>
+                    </Marker>
+                  ))}
 
                 <MapController leg={activeLeg} />
               </MapContainer>

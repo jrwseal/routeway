@@ -125,5 +125,45 @@ export function planRouter(db: Client): Router {
     res.json(result.rows.map((r: any) => ({ routeIndex: r.route_index, currentStep: r.current_step, stepState: r.step_state })));
   });
 
+  router.post('/location', requireAuth(db), async (req, res) => {
+    if (req.user!.role !== 'driver') {
+      res.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+    const { lat, lon } = req.body ?? {};
+    if (typeof lat !== 'number' || typeof lon !== 'number') {
+      res.status(400).json({ error: 'lat and lon must be numbers' });
+      return;
+    }
+    await db.execute({
+      sql: `
+        INSERT INTO driver_locations (user_id, lat, lon, updated_at)
+        VALUES (?, ?, ?, datetime('now'))
+        ON CONFLICT(user_id) DO UPDATE SET lat = excluded.lat, lon = excluded.lon, updated_at = excluded.updated_at
+      `,
+      args: [req.user!.id, lat, lon],
+    });
+    res.json({ ok: true });
+  });
+
+  router.get('/locations', requireRole(db, 'admin'), async (req, res) => {
+    const result = await db.execute(`
+      SELECT u.id as userId, u.display_name as displayName, v.id as vehicleId, v.name as vehicleName,
+             dl.lat, dl.lon, dl.updated_at as updatedAt
+      FROM driver_locations dl
+      JOIN users u ON u.id = dl.user_id
+      LEFT JOIN vehicles v ON v.driver_user_id = u.id
+    `);
+    res.json(result.rows.map((r: any) => ({
+      userId: r.userId,
+      displayName: r.displayName,
+      vehicleId: r.vehicleId,
+      vehicleName: r.vehicleName,
+      lat: r.lat,
+      lon: r.lon,
+      updatedAt: r.updatedAt,
+    })));
+  });
+
   return router;
 }
