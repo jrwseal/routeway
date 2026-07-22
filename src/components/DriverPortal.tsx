@@ -270,8 +270,8 @@ export default function DriverPortal({
             {isDriverSession && activeDeviation && (
               <div className="bg-[#FEF3C7] border border-amber-warning rounded-lg p-3 flex flex-col gap-2">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="w-4 h-4 text-amber-warning-deep flex-shrink-0 mt-0.5" />
-                  <p className="text-xs font-semibold text-amber-warning-deep">
+                  <AlertTriangle className="w-4 h-4 text-[#92400E] flex-shrink-0 mt-0.5" />
+                  <p className="text-xs font-semibold text-[#92400E]">
                     ออกนอกเส้นทางมา {Math.round(activeDeviation.durationMinutes)} นาที ({activeDeviation.distanceFromRoute}ม.)
                   </p>
                 </div>
@@ -280,14 +280,14 @@ export default function DriverPortal({
                     <button
                       key={value}
                       onClick={() => handleDeviationReason(value)}
-                      className="flex-1 rounded-md py-1.5 text-[11px] font-medium bg-white border border-slate-300 text-slate-700 hover:bg-slate-50"
+                      className="flex-1 min-h-11 rounded-md py-3 text-xs font-medium bg-white border border-slate-300 text-slate-700 hover:bg-slate-50"
                     >
                       {label}
                     </button>
                   ))}
                   <button
                     onClick={dismissActiveDeviation}
-                    className="px-2 text-[11px] text-slate-500"
+                    className="min-h-11 px-3 text-xs text-slate-500"
                   >
                     ปิด
                   </button>
@@ -413,7 +413,7 @@ export default function DriverPortal({
                   Sequenced Manifest Activity
                 </CardTitle>
                 {routeWaitingMinutes > 0 && (
-                  <span className="text-xs font-bold text-amber-warning-deep bg-[#FEF3C7] px-2 py-1 rounded">
+                  <span className="text-xs font-bold text-[#92400E] bg-[#FEF3C7] px-2 py-1 rounded">
                     ⏱ รอรวม {(routeWaitingMinutes / 60).toFixed(1)} ชม.
                   </span>
                 )}
@@ -444,12 +444,12 @@ export default function DriverPortal({
                           {isPast ? (
                             <span
                               className="text-xs bg-[#D1FAE5] px-2 py-0.5 rounded flex items-center"
-                              style={{ color: "#10B981", fontWeight: "bold" }}
+                              style={{ color: "#047857", fontWeight: "bold" }}
                             >
                               ✅ ส่งเสร็จแล้ว
                             </span>
                           ) : isActive && stepState === "in_transit" ? (
-                            <span className="text-xs bg-[#FEF3C7] px-2 py-0.5 rounded flex items-center text-amber-warning-deep font-bold">
+                            <span className="text-xs bg-[#FEF3C7] px-2 py-0.5 rounded flex items-center text-[#92400E] font-bold">
                               🚚 กำลังไปส่ง
                             </span>
                           ) : null}
