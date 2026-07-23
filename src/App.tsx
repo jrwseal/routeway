@@ -13,6 +13,8 @@ import { processData, DEFAULT_FLEET_POOL } from './lib/geo';
 import { getFleet, saveActivePlan } from './lib/api';
 import { validateColdStorageFleet } from './lib/coldStorageValidation';
 import { AlertCircle, Loader2, Menu } from 'lucide-react';
+import { format } from 'date-fns';
+import type { VehicleWaitingAdvisory } from './lib/waitingAdvisor';
 import FleetConfigModal from './components/FleetConfigModal';
 import CareTab from './care/CareTab';
 import DriverShell from './components/DriverShell';
@@ -43,6 +45,9 @@ export default function App() {
   const [variantResults, setVariantResults] = useState<ProcessedData[]>([]);
   const [savingsBaseline, setSavingsBaseline] = useState<ProcessedData | null>(null);
   const [isComparing, setIsComparing] = useState(false);
+  const [variantParams, setVariantParams] = useState<{ algorithm: 'savings' | 'nearest-neighbor' | 'sweep' | 'or-opt-sa' | 'solomon-i1'; applyTwoOpt: boolean }[]>([]);
+  const [selectedVariantIndex, setSelectedVariantIndex] = useState<number | null>(null);
+  const [applyingRouteIndex, setApplyingRouteIndex] = useState<number | null>(null);
 
   const loadFleetFromServer = () => {
     getFleet().then(fleet => {
@@ -118,6 +123,7 @@ export default function App() {
 
     const comparison: ComparisonResult[] = [];
     const variantData: ProcessedData[] = [];
+    const fulfilledParams: typeof variants = [];
     results.forEach((r, idx) => {
       if (r.status === 'fulfilled') {
         const v = variants[idx];
@@ -132,6 +138,7 @@ export default function App() {
           totalTrucksUsed: d.totalTrucksUsed,
         });
         variantData.push(d);
+        fulfilledParams.push(v);
       } else {
         console.warn(`Algorithm variant ${idx} failed:`, r.reason);
       }
@@ -151,8 +158,10 @@ export default function App() {
       }, 0);
       bestData = variantData[bestIdx];
       setProcessedData(bestData);
+      setSelectedVariantIndex(bestIdx);
     }
     setVariantResults(variantData);
+    setVariantParams(fulfilledParams);
 
     const savingsIdx = comparison.findIndex(c => c.algorithm === 'Clarke-Wright' && !c.twoOpt);
     setSavingsBaseline(savingsIdx >= 0 ? variantData[savingsIdx] : null);
@@ -174,11 +183,41 @@ export default function App() {
 
   const selectVariant = async (idx: number) => {
     setProcessedData(variantResults[idx]);
+    setSelectedVariantIndex(idx);
     try {
       await saveActivePlan(optimizationCriterion, variantResults[idx]);
     } catch (err) {
       console.error('Failed to save active plan:', err);
       alert('บันทึกแผนเส้นทางไปยังเซิร์ฟเวอร์ไม่สำเร็จ กรุณาลองใหม่ หรือแจ้งผู้ดูแลระบบ');
+    }
+  };
+
+  const handleApplyDepartureAdvisory = async (advisory: VehicleWaitingAdvisory) => {
+    if (!pendingNodes || !advisory.suggestedDepartureTime || selectedVariantIndex === null) return;
+    const { algorithm, applyTwoOpt } = variantParams[selectedVariantIndex];
+    const updatedFleetPool = activeFleetPool.map(v =>
+      v.id === advisory.vehicle.id
+        ? { ...v, departureTime: format(advisory.suggestedDepartureTime!, 'HH:mm') }
+        : v
+    );
+
+    setApplyingRouteIndex(advisory.routeIndex);
+    try {
+      const newData = await processData(pendingNodes, {
+        fleetPool: updatedFleetPool,
+        avgSpeed,
+        driverWage: driverWaitingWage,
+        algorithm,
+        applyTwoOpt,
+      });
+      setActiveFleetPool(updatedFleetPool);
+      setProcessedData(newData);
+      await saveActivePlan(optimizationCriterion, newData);
+    } catch (err) {
+      console.error('Failed to apply departure advisory:', err);
+      alert('ปรับแผนใหม่ตามเวลาออกเดินทางที่แนะนำไม่สำเร็จ กรุณาลองใหม่');
+    } finally {
+      setApplyingRouteIndex(null);
     }
   };
 
@@ -256,6 +295,8 @@ export default function App() {
                 data={processedData}
                 savingsBaseline={savingsBaseline}
                 onViewAlgorithm={comparisonData ? () => setIsComparisonModalOpen(true) : undefined}
+                onApplyDepartureAdvisory={selectedVariantIndex !== null ? handleApplyDepartureAdvisory : undefined}
+                applyingRouteIndex={applyingRouteIndex}
               />
             )}
             {currentTab === 'statistics' && <StatisticsCar data={processedData} savingsBaseline={savingsBaseline} />}

@@ -4,14 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import RouteMap from "./RouteMap";
 import LiveDeliveryStatus from "./LiveDeliveryStatus";
 import WaitingTimeBanner from "./WaitingTimeBanner";
+import type { VehicleWaitingAdvisory } from "../lib/waitingAdvisor";
 
 interface DashboardProps {
   data: ProcessedData;
   savingsBaseline?: ProcessedData | null;
   onViewAlgorithm?: () => void;
+  onApplyDepartureAdvisory?: (advisory: VehicleWaitingAdvisory) => void;
+  applyingRouteIndex?: number | null;
 }
 
-export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: DashboardProps) {
+export default function Dashboard({ data, savingsBaseline, onViewAlgorithm, onApplyDepartureAdvisory, applyingRouteIndex }: DashboardProps) {
   const baselineDistance = savingsBaseline ? savingsBaseline.milkRunDistance : data.traditionalDistance;
   const isSavingsBaseline = !!savingsBaseline;
   const distanceSavingsPct = baselineDistance > 0
@@ -27,7 +30,11 @@ export default function Dashboard({ data, savingsBaseline, onViewAlgorithm }: Da
         </p>
       </div>
 
-      <WaitingTimeBanner data={data} />
+      <WaitingTimeBanner
+        data={data}
+        onApplyAdvisory={onApplyDepartureAdvisory}
+        applyingRouteIndex={applyingRouteIndex ?? null}
+      />
 
       <RouteMap data={data} onViewAlgorithm={onViewAlgorithm} />
 
