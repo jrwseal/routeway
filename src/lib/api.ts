@@ -8,10 +8,12 @@ export interface FleetConfig {
   enableColdStorage: boolean;
 }
 
+export type ProgressStepState = 'unconfirmed' | 'pending' | 'in_transit' | 'completed';
+
 export interface ProgressEntry {
   routeIndex: number;
   currentStep: number;
-  stepState: 'pending' | 'in_transit';
+  stepState: ProgressStepState;
 }
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -73,7 +75,7 @@ export async function getProgress(): Promise<ProgressEntry[]> {
   return request<ProgressEntry[]>('/plan/progress');
 }
 
-export async function postProgress(routeIndex: number, currentStep: number, stepState: 'pending' | 'in_transit'): Promise<void> {
+export async function postProgress(routeIndex: number, currentStep: number, stepState: ProgressStepState): Promise<void> {
   await request('/plan/progress', { method: 'POST', body: JSON.stringify({ routeIndex, currentStep, stepState }) });
 }
 

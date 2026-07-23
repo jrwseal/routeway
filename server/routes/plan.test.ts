@@ -47,10 +47,10 @@ describe('plan routes', () => {
     expect(res.body.plan.routeSummaries[0].routeIndex).toBe(1);
   });
 
-  it('resets progress to step 0 when a new plan is saved', async () => {
+  it('resets progress to step 0, unconfirmed when a new plan is saved', async () => {
     await agent.post('/api/plan').send(samplePlan());
     const progressRes = await agent.get('/api/plan/progress');
-    expect(progressRes.body).toEqual([{ routeIndex: 1, currentStep: 0, stepState: 'pending' }]);
+    expect(progressRes.body).toEqual([{ routeIndex: 1, currentStep: 0, stepState: 'unconfirmed' }]);
   });
 
   it('can push progress and read it back', async () => {

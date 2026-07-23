@@ -104,7 +104,7 @@ interface DriverPortalProps {
   stepState: "pending" | "in_transit";
   setStepState: (state: "pending" | "in_transit") => void;
   lockedRouteIndex?: number;
-  onStepChange?: (routeIndex: number, currentStep: number, stepState: "pending" | "in_transit") => void;
+  onStepChange?: (routeIndex: number, currentStep: number, stepState: "pending" | "in_transit" | "completed") => void;
 }
 
 export default function DriverPortal({
@@ -397,7 +397,11 @@ export default function DriverPortal({
                       onClick={() => {
                         const nextStep = currentStep + 1;
                         handleNextStep();
-                        onStepChange?.(selectedRouteIndex, nextStep, "pending");
+                        onStepChange?.(
+                          selectedRouteIndex,
+                          nextStep,
+                          nextStep >= routeLegs.length ? "completed" : "pending",
+                        );
                       }}
                       className="w-full bg-signal-green hover:bg-signal-green-hover text-white font-bold py-4 px-4 rounded-lg shadow-md transition-all active:scale-[0.98] flex items-center justify-center"
                     >

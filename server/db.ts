@@ -52,7 +52,7 @@ export async function createDb(url: string, authToken?: string): Promise<Client>
     CREATE TABLE IF NOT EXISTS plan_progress (
       route_index INTEGER PRIMARY KEY,
       current_step INTEGER NOT NULL DEFAULT 0,
-      step_state TEXT NOT NULL DEFAULT 'pending',
+      step_state TEXT NOT NULL DEFAULT 'unconfirmed',
       updated_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 

@@ -5,8 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Truck } from 'lucide-react';
 
 const STEP_LABELS: Record<ProgressEntry['stepState'], string> = {
+  unconfirmed: 'รอคนขับยืนยันรับงาน',
   pending: 'รอเริ่มส่ง',
   in_transit: 'กำลังไปส่ง',
+  completed: 'ส่งครบทุกจุดแล้ว ✅',
 };
 
 export default function LiveDeliveryStatus({ routeSummaries }: { routeSummaries: RouteSummary[] }) {
@@ -44,8 +46,14 @@ export default function LiveDeliveryStatus({ routeSummaries }: { routeSummaries:
                   <Truck className="w-4 h-4 mr-2" style={{ color: summary.vehicle.color }} />
                   <span className="font-medium text-slate-700">{summary.vehicle.name}</span>
                 </div>
-                <span className="text-sm text-slate-500">
-                  {entry ? `จุดที่ ${entry.currentStep + 1} — ${STEP_LABELS[entry.stepState]}` : 'ยังไม่มีข้อมูล'}
+                <span className={`text-sm font-medium ${entry?.stepState === 'completed' ? 'text-signal-green' : 'text-slate-500 font-normal'}`}>
+                  {entry
+                    ? entry.stepState === 'completed'
+                      ? STEP_LABELS.completed
+                      : entry.stepState === 'unconfirmed'
+                        ? STEP_LABELS.unconfirmed
+                        : `จุดที่ ${entry.currentStep + 1} — ${STEP_LABELS[entry.stepState]}`
+                    : 'ยังไม่มีข้อมูล'}
                 </span>
               </div>
             );

@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { ProcessedData, RouteSummary, RouteLeg } from '../types';
 import { MapContainer, TileLayer, Polyline, useMap, Marker, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 import { Layers, BarChart3 } from 'lucide-react';
+import { getProgress, ProgressEntry } from '../lib/api';
 
 function MapController({ legs, activeRouteIndices }: { legs: RouteLeg[], activeRouteIndices: number[] }) {
   const map = useMap();
@@ -48,6 +49,43 @@ export default function RouteMap({
   const allRoutes = data.routeSummaries.map(r => r.routeIndex);
   const [activeRouteIndices, setActiveRouteIndices] = useState<number[]>(allRoutes);
   const [isFilterOpen, setIsFilterOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1024 : true);
+  const [progress, setProgress] = useState<ProgressEntry[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const poll = () => {
+      getProgress().then(entries => {
+        if (!cancelled) setProgress(entries);
+      }).catch(() => {});
+    };
+    poll();
+    const interval = setInterval(poll, 5000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, []);
+
+  // Ordered, non-return-to-depot legs per route — a node's index here is its delivery stop number.
+  const deliveryLegsByRoute = useMemo(() => {
+    const map = new Map<number, RouteLeg[]>();
+    for (const leg of data.legs) {
+      if (leg.isReturnToDepot) continue;
+      const list = map.get(leg.routeIndex) ?? [];
+      list.push(leg);
+      map.set(leg.routeIndex, list);
+    }
+    return map;
+  }, [data.legs]);
+
+  const isNodeDelivered = (leg: RouteLeg): boolean => {
+    const entry = progress.find(p => p.routeIndex === leg.routeIndex);
+    if (!entry) return false;
+    if (entry.stepState === 'completed') return true;
+    const routeLegs = deliveryLegsByRoute.get(leg.routeIndex) ?? [];
+    const stepIndex = routeLegs.indexOf(leg);
+    return stepIndex !== -1 && entry.currentStep > stepIndex;
+  };
 
   // Sync if data changes
   useEffect(() => {
@@ -89,6 +127,7 @@ export default function RouteMap({
   const depotIcon = createPinIcon('black', 32);
   const customerIcon = createPinIcon('#ef4444', 28);
   const coldCustomerIcon = createPinIcon('#06B6D4', 28);
+  const deliveredIcon = createPinIcon('var(--color-signal-green)', 28);
 
   return (
     <div className="relative w-full h-[350px] sm:h-[500px] border border-slate-300 rounded-lg overflow-hidden shadow-md mt-6">
@@ -110,13 +149,20 @@ export default function RouteMap({
         </Marker>
 
         {data.nodes.slice(1).map((node, idx) => {
-          const isActive = data.legs.some(leg =>
-            activeRouteIndices.includes(leg.routeIndex) &&
-            !leg.isReturnToDepot &&
-            leg.toNode.lat === node.lat &&
-            leg.toNode.lon === node.lon
+          const leg = data.legs.find(l =>
+            activeRouteIndices.includes(l.routeIndex) &&
+            !l.isReturnToDepot &&
+            l.toNode.lat === node.lat &&
+            l.toNode.lon === node.lon
           );
-          if (!isActive) return null;
+          if (!leg) return null;
+          if (isNodeDelivered(leg)) {
+            return (
+              <Marker key={idx} position={[node.lat, node.lon]} icon={deliveredIcon}>
+                <Tooltip direction="top" offset={[0, 0]} opacity={1}>✅ ส่งแล้ว</Tooltip>
+              </Marker>
+            );
+          }
           if (node.requiresColdStorage) {
             return (
               <Marker key={idx} position={[node.lat, node.lon]} icon={coldCustomerIcon}>

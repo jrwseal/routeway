@@ -64,7 +64,7 @@ export function planRouter(db: Client): Router {
       { sql: 'DELETE FROM plan_progress', args: [] },
       ...routeSummaries.map((summary: any) => ({
         sql: 'INSERT INTO plan_progress (route_index, current_step, step_state) VALUES (?, 0, ?)',
-        args: [summary.routeIndex, 'pending'],
+        args: [summary.routeIndex, 'unconfirmed'],
       })),
     ], 'write');
 

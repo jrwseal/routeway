@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { ProcessedData } from '../types';
 import { getMyRoute, postProgress, logout, CurrentUser } from '../lib/api';
 import DriverPortal from './DriverPortal';
+import RouteConfirmScreen from './RouteConfirmScreen';
 import AppLogo from './AppLogo';
 import { LogOut } from 'lucide-react';
 
@@ -15,6 +16,8 @@ export default function DriverShell({ user, onLoggedOut }: DriverShellProps) {
   const [hasNoRoute, setHasNoRoute] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [stepState, setStepState] = useState<'pending' | 'in_transit'>('pending');
+  const [isConfirmed, setIsConfirmed] = useState(false);
+  const [isConfirming, setIsConfirming] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -45,6 +48,19 @@ export default function DriverShell({ user, onLoggedOut }: DriverShellProps) {
   const handleLogout = async () => {
     await logout().catch(() => {});
     onLoggedOut();
+  };
+
+  const handleConfirmRoute = async () => {
+    if (!data) return;
+    setIsConfirming(true);
+    try {
+      await postProgress(data.routeSummaries[0].routeIndex, 0, 'pending');
+      setIsConfirmed(true);
+    } catch {
+      alert('ยืนยันรับงานไม่สำเร็จ กรุณาลองใหม่');
+    } finally {
+      setIsConfirming(false);
+    }
   };
 
   const topBar = (
@@ -81,6 +97,20 @@ export default function DriverShell({ user, onLoggedOut }: DriverShellProps) {
         <div className="flex flex-col items-center justify-center p-12 text-center text-slate-500">
           กำลังโหลดเส้นทาง...
         </div>
+      </div>
+    );
+  }
+
+  if (!isConfirmed) {
+    return (
+      <div className="min-h-screen bg-neutral-canvas">
+        {topBar}
+        <RouteConfirmScreen
+          routeSummary={data.routeSummaries[0]}
+          legs={data.legs}
+          onConfirm={handleConfirmRoute}
+          confirming={isConfirming}
+        />
       </div>
     );
   }
